@@ -20,7 +20,7 @@ num_eval_files = sum([len(files) for r, d, files in os.walk(eval_path)])
 num_classes = 28
 learning_rate = 0.0000075
 batch_size = 16
-num_epochs = 20
+num_epochs = 40
 dropout_pc = 0.65
 optimizer = 'Adam'
 loss = 'categorical_crossentropy'
@@ -51,9 +51,9 @@ if selected_model=="InceptionV3":
     predictions = Dense(num_classes, activation=output_activation)(x)
     # this is the model we will train
     model = Model(inputs=base_model.input, outputs=predictions)
-    for layer in model.layers[:-4]:
+    for layer in model.layers:
         layer.trainable = False
-    for layer in model.layers[0:]:
+    for layer in model.layers[65:]:
         layer.trainable = True
 
 elif selected_model == "VGG16":
@@ -77,9 +77,9 @@ elif selected_model == "VGG16":
     predictions = Dense(num_classes, activation="softmax", name="sm_out")(x)
 
     model = Model(inputs=base_model.input, outputs=predictions)
-    for layer in model.layers[:19]:
+    for layer in model.layers:
         layer.trainable = False
-    for layer in model.layers[19:]:
+    for layer in model.layers[-36:]:
         layer.trainable = True
 
 model.summary()
@@ -101,12 +101,22 @@ model.compile(
     loss=loss,
     metrics=[metrics.categorical_accuracy])
 
+from PIL import ImageFilter
+
+def my_preprocess(img):
+    img = img.filter(ImageFilter.GaussianBlur)
+    img = preprocess_input(img)
+    return img
 
 # train the model on the new data for a few epochs
 train_datagen = ImageDataGenerator(
     preprocessing_function=preprocess_input,
+    rotation_range=20,
     shear_range=0.2,
     zoom_range=0.2,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    brightness_range=[0.2, 0.8],
     horizontal_flip=True)
 
 train_generator = train_datagen.flow_from_directory(

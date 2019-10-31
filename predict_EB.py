@@ -10,7 +10,7 @@ import skimage
 from tensorflow.keras.preprocessing import image
 from random import shuffle
 # model.summary()
-model = load_model("E:\\KerasOutput\\run_2019_10_16_16_28\\my_keras_model.h5")
+model = load_model("E:\\KerasOutput\\run_2019_10_26_21_58\\my_keras_model.h5")
 
 doImageGen = False
 
@@ -69,9 +69,9 @@ if doImageGen:
         # print(c)
         count += 1
 else:
-    # testDir = 'C:\\Users\\alert\\Google Drive\\ML\\Databases\\Photo Booth User Group Photos\\(2) Bird Photo Booth Users Group_files\\'
+    testDir = 'C:\\Users\\alert\\Google Drive\\ML\\Databases\\Photo Booth User Group Photos\\(2) Bird Photo Booth Users Group_files\\'
     # testDir = 'C:\\Users\\alert\Google Drive\\ML\\Databases\\Birds_dB\\Keras2\\test\\blue_jay\\'
-    testDir = "C:\\Users\\alert\\Google Drive\\ML\\Databases\\Own Feeder BirdPics\\Demo\\"
+    # testDir = "C:\\Users\\alert\\Google Drive\\ML\\Databases\\Own Feeder BirdPics\\Demo\\"
     # testDir = "E:\\ML Training Data\\(2) Bird Photo Booth Users Group_files\\_UNSORTED\\"
 
     file_list = []

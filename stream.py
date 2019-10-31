@@ -12,7 +12,7 @@ import pandas as pd
 
 model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
 
-captures_folder = "C:\\Users\\alert\\AppData\\Roaming\\iSpy\\WebServerRoot\\Media\\Video\\WZQYX\\grabs\\"
+captures_folder = "C:\\Users\\alert\\AppData\\Roaming\\iSpy\\WebServerRoot\\Media\\Video\\UOOWS\\grabs\\"
                   # "E:\\Electric Bird Caster\\Captured\\video\\TRARO\\grabs\\"
 dump_classified_imp_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\"
 
@@ -50,25 +50,44 @@ top_10 = [i for i in range(28)]
 
 bird_history = np.zeros([len(top_10), 60], dtype=np.int16)
 
-fig, ax = plt.subplots(figsize=(17.5, 4.5))
 
 current_bird_count = np.zeros([len(top_10), 1])
 latest_labels = ['', '', '', '', '', '', '', '', '', '']
 
-detection_threshold = 0.75
+detection_threshold = 0.50
 
-def plot_IDhistory(history, ax, pretty_names_list):
-    ax.clear()
-    sns.heatmap(history,
+def plot_IDhistory(history, pretty_names_list):
+    # ax.clear()
+
+    fig, ax = plt.subplots(figsize=(17.5, 4.5))
+
+    # Find all non zero entries
+    idx = np.argmax(history, axis=1) > 0
+    idx[3] = True  # set the "No birds one to True so at least one is there
+
+    # Process history matrix accordingly
+    h = history[idx, :]
+    a = np.zeros((1, len(history[1, :])))
+    h = np.concatenate((a, h, a), axis=0)
+
+    # Get corresponding names
+    idx2 = [i for i, x in enumerate(idx) if x]
+    names = [pretty_names_list[i] for i in idx2]
+    names.insert(0, "")
+    names.append("")
+
+    sns.heatmap(h.astype(np.int),
                 ax=ax,
                 annot=True, fmt="d",
                 linewidths=.5,
-                yticklabels=pretty_names_list,
+                yticklabels=names,
                 cbar=False)
 
     plt.title("Birds visiting the last hour")
     plt.xlabel("Minutes past now")
     plt.savefig(dump_classified_imp_folder + "classification_graph.png")
+    # plt.show()
+    plt.close(fig)
 
 
 def gimme_minute():
@@ -77,7 +96,7 @@ def gimme_minute():
 
 ref_minute = gimme_minute()
 
-plot_IDhistory(bird_history, ax, pretty_names_list)
+plot_IDhistory(bird_history, pretty_names_list)
 
 while 1 == 1:
 
@@ -89,7 +108,7 @@ while 1 == 1:
         current_bird_count = np.zeros([len(top_10), 1])
 
         # Update figure
-        plot_IDhistory(bird_history, ax, pretty_names_list)
+        plot_IDhistory(bird_history, pretty_names_list)
 
     files = os.listdir(captures_folder)
     if files:
@@ -106,43 +125,51 @@ while 1 == 1:
 
                 bird_idx = np.argmax(pred)
 
-                if bird_idx != 3:
+                if bird_idx < 10000000:  # != 3:
 
-                    if np.max(pred) > detection_threshold:
-                        ti = pretty_names_list[bird_idx] + " (" + str(prob) + "%)"
-                    else:
-                        ti = pretty_names_list[bird_idx] + "??? (" + str(prob) + "%)"
+                    # if np.max(pred) > detection_threshold:
+                    #     ti = pretty_names_list[bird_idx] + " (" + str(prob) + "%)"
+                    # else:
+                    #     ti = pretty_names_list[bird_idx] + "??? (" + str(prob) + "%)"
 
                     # if bird_idx in top_10:
                     if np.max(pred) > detection_threshold:
-                        latest_labels[1:] = latest_labels[0:-1]
-                        t = str(datetime.datetime.now())
-                        t = t[10:19]
-                        latest_labels[0] = t + ": " + ti
-                        label_file = open(dump_classified_imp_folder + "label.txt", "w+")
-                        for l in latest_labels:
-                            label_file.write(l + "\n")
-                        label_file.close()
+                        # latest_labels[1:] = latest_labels[0:-1]
+                        # t = str(datetime.datetime.now())
+                        # t = t[10:19]
+                        # latest_labels[0] = t + ": " + ti
+                        # label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+                        # for l in latest_labels:
+                        #     label_file.write(l + "\n")
+                        # label_file.close()
 
 
                         current_bird_count[bird_idx] += 1
 
-                    destination_dir = dump_classified_imp_folder + \
-                                      "Classified" + "\\" + \
-                                      pretty_names_list[bird_idx]
+                        # Construct destination directory
+                        destination_dir = dump_classified_imp_folder + \
+                                          "Classified" + "\\" + \
+                                          pretty_names_list[bird_idx]
 
-                    if not os.path.isdir(destination_dir):
-                        os.makedirs(destination_dir)
-                    shutil.copyfile(captures_folder + f, destination_dir + "\\" + f)
+                        # Check if it already exists
+                        if not os.path.isdir(destination_dir):
+                            os.makedirs(destination_dir)
 
-                shutil.copyfile(captures_folder + f, dump_classified_imp_folder + "classification_picture.png")
+                        # Copy current picture to the destination
+                        shutil.copyfile(captures_folder + f, destination_dir + "\\" + f)
+
+                        # Copy current picture to be displayed in OBS
+                        shutil.copyfile(captures_folder + f, dump_classified_imp_folder + "classification_picture.png")
+
                 os.remove(captures_folder + f)
 
                 current_class_file = open(dump_classified_imp_folder + "Current_Classification.txt", "w+")
-                if prob > 75:
-                    current_class_file.write(pretty_names_list[bird_idx])
+                timmy = str(datetime.datetime.now())
+                timmy = timmy[11:19]
+                if prob > detection_threshold:
+                    current_class_file.write(pretty_names_list[bird_idx] + " (" + timmy + ")")
                 else:
-                    current_class_file.write("Not sure")
+                    current_class_file.write("Not sure" + " (" + timmy + ")")
 
                 current_class_file.close()
 
@@ -152,6 +179,6 @@ while 1 == 1:
 
     else:
         # If no files were found in the capture folder this round
-        print("No files found")
+        # print("No files found")
         time.sleep(1)  #
 
