@@ -1,0 +1,6 @@
+.idea/
+Estimator output/
+train_model/__pycache__/
+old/
+*.zip
+ngrok*
