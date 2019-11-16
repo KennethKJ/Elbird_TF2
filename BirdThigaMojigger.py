@@ -52,9 +52,9 @@ if selected_model=="InceptionV3":
     # this is the model we will train
     model = Model(inputs=base_model.input, outputs=predictions)
     for layer in model.layers:
-        layer.trainable = False
-    for layer in model.layers[65:]:
         layer.trainable = True
+    # for layer in model.layers[65:]:
+    #     layer.trainable = True
 
 elif selected_model == "VGG16":
 
@@ -78,9 +78,9 @@ elif selected_model == "VGG16":
 
     model = Model(inputs=base_model.input, outputs=predictions)
     for layer in model.layers:
-        layer.trainable = False
-    for layer in model.layers[-36:]:
         layer.trainable = True
+    # for layer in model.layers[-36:]:
+    #     layer.trainable = True
 
 model.summary()
 

@@ -20,7 +20,7 @@ pretty_names_list = [
     'Crow',
     'Goldfinch breeding M',
     'Goldfinch off duty M or F',
-    'No bird ...',
+    'No bird detected',
     'Black capped chickadee',
     'Blue jay',
     'Brown headed cowbird F',
@@ -49,7 +49,6 @@ pretty_names_list = [
 top_10 = [i for i in range(28)]
 
 bird_history = np.zeros([len(top_10), 60], dtype=np.int16)
-
 
 current_bird_count = np.zeros([len(top_10), 1])
 latest_labels = ['', '', '', '', '', '', '', '', '', '']
@@ -125,24 +124,9 @@ while 1 == 1:
 
                 bird_idx = np.argmax(pred)
 
-                if bird_idx < 10000000:  # != 3:
+                if bird_idx != 3:
 
-                    # if np.max(pred) > detection_threshold:
-                    #     ti = pretty_names_list[bird_idx] + " (" + str(prob) + "%)"
-                    # else:
-                    #     ti = pretty_names_list[bird_idx] + "??? (" + str(prob) + "%)"
-
-                    # if bird_idx in top_10:
-                    if np.max(pred) > detection_threshold:
-                        # latest_labels[1:] = latest_labels[0:-1]
-                        # t = str(datetime.datetime.now())
-                        # t = t[10:19]
-                        # latest_labels[0] = t + ": " + ti
-                        # label_file = open(dump_classified_imp_folder + "label.txt", "w+")
-                        # for l in latest_labels:
-                        #     label_file.write(l + "\n")
-                        # label_file.close()
-
+                     if np.max(pred) > detection_threshold:
 
                         current_bird_count[bird_idx] += 1
 
@@ -161,17 +145,19 @@ while 1 == 1:
                         # Copy current picture to be displayed in OBS
                         shutil.copyfile(captures_folder + f, dump_classified_imp_folder + "classification_picture.png")
 
+                        current_class_file = open(dump_classified_imp_folder + "Current_Classification.txt", "w+")
+                        timmy = str(datetime.datetime.now())
+                        timmy = timmy[11:19]
+                        if prob > detection_threshold:
+                            current_class_file.write(pretty_names_list[bird_idx] + " (" + timmy + ")")
+                        else:
+                            current_class_file.write("Not sure" + " (" + timmy + ";" + str(prob) + "%)")
+
+                        current_class_file.close()
+
                 os.remove(captures_folder + f)
 
-                current_class_file = open(dump_classified_imp_folder + "Current_Classification.txt", "w+")
-                timmy = str(datetime.datetime.now())
-                timmy = timmy[11:19]
-                if prob > detection_threshold:
-                    current_class_file.write(pretty_names_list[bird_idx] + " (" + timmy + ")")
-                else:
-                    current_class_file.write("Not sure" + " (" + timmy + ")")
 
-                current_class_file.close()
 
             except:
                 print("Error reading file!")

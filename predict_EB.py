@@ -10,9 +10,9 @@ import skimage
 from tensorflow.keras.preprocessing import image
 from random import shuffle
 # model.summary()
-model = load_model("E:\\KerasOutput\\run_2019_10_26_21_58\\my_keras_model.h5")
+model = load_model("E:\\KerasOutput\\run_2019_10_31_15_51\\my_keras_model.h5")
 
-doImageGen = False
+doImageGen = True
 
 if doImageGen:
     eval_test_datagen = ImageDataGenerator(
