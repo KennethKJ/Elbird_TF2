@@ -3,8 +3,8 @@ import tensorflow as tf
 from tensorflow.keras.applications.mobilenet import preprocess_input as vgg16_input_processing
 from tensorflow.keras.applications.inception_v3 import preprocess_input as inceptionV3_preprocessing
 from tensorflow.keras.applications.nasnet import preprocess_input as nasnet_preprocessing
-
-tf.logging.set_verbosity(v=tf.logging.INFO)
+import tensorflow_addons as tfa
+# tf.logging.set_verbosity(v=tf.logging.INFO)
 
 
 def read_and_preprocess_with_augment(image_bytes, label=None, pr=None):
@@ -23,9 +23,10 @@ def read_and_preprocess(image_bytes, label=None, pr=None, augment=False):
     if augment:
 
         # Resize to slightly larger than target size
-        image = tf.image.resize_bilinear(images=image,
-                                         size=[pr['image size'][0] + 50, pr['image size'][1] + 50],
-                                         align_corners=False)
+        image = tf.image.resize(images=image,
+                                method=tf.image.ResizeMethod.ResizeMethod.BILINEAR,
+                                size=[pr['image size'][0] + 50, pr['image size'][1] + 50],
+                                preserve_aspect_ratio=True)
 
         # Image random rotation
         degree_angle = tf.random.uniform((), minval=-25, maxval=25, dtype=tf.dtypes.float32)
@@ -79,8 +80,8 @@ def read_and_preprocess(image_bytes, label=None, pr=None, augment=False):
 def make_input_fn(csv_of_filenames, mode, pr, augment=False):
     def _input_fn():
         def decode_csv(csv_row):
-            filename, label = tf.decode_csv(records=csv_row, record_defaults=[[""], [""]])
-            image_bytes = tf.read_file(filename=pr['dB_path'] + filename)
+            filename, label = tf.io.decode_csv(records=csv_row, record_defaults=[[""], [""]])
+            image_bytes = tf.io.read_file(filename=pr['dB_path'] + filename)
             return image_bytes, label
 
         # Create tf.data.dataset from filename

@@ -3,16 +3,15 @@ import os
 import numpy as np
 # Define paths
 dB_path = "C:/Users/alert/Google Drive/ML/Databases/Birds_dB/Images/"
-bucket_path = "/electric-birder-71281-bird-db/Birds_dB/Images/"
+# bucket_path = "/electric-birder-71281-bird-db/Birds_dB/Images/"
 bucket_path = dB_path
 
 # Files
 
 file_list = []
 label_list = []
-filename_classes = "C:/Users/alert/Google Drive/ML/Databases/Birds_dB/Mappings/full_bird_list.txt"
+filename_classes = "C:/Users/alert/Google Drive/ML/Databases/Birds_dB/Mappings/minimal_bird_list.txt"
 LIST_OF_CLASSES = [line.strip() for line in open(filename_classes, 'r')]
-
 
 f = open('C:/Users/alert/Google Drive/ML/Databases/Birds_dB/Mappings/classes.txt', 'w')
 

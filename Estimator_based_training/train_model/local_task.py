@@ -116,11 +116,13 @@ if __name__ == '__main__':
     # #         os.environ.get('TF_CONFIG', '{}')
     # #     ).get('task', {}).get('trial', '')
     # # )
-    model_num = 69
+    model_num = 70
+
+    CSV_files_path = "C:\\Users\\alert\\Google Drive\\ML\\Elbird TF2\\Data_proc\\"
     # Throw properties into params dict to pass to other functions
     params = {}
-    params['train csv'] = "C:/Users/alert/Google Drive/ML/ElBird/Data_proc/train_set_local.csv"
-    params['eval csv'] = "C:/Users/alert/Google Drive/ML/ElBird/Data_proc/eval_set_local.csv"
+    params['train csv'] = CSV_files_path + "train_set_local.csv"
+    params['eval csv'] = CSV_files_path + "eval_set_local.csv"
     params['output path'] = "C:/EstimatorOutput/" + str(model_num) + "/"
     params['data path'] = "C:/Users/alert/Google Drive/ML/Databases/Birds_dB/Images"
     params['num channels'] = 3

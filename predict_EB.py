@@ -9,10 +9,14 @@ import os
 import skimage
 from tensorflow.keras.preprocessing import image
 from random import shuffle
+from tf_explain.core.grad_cam import GradCAM
+
 # model.summary()
-model = load_model("E:\\KerasOutput\\run_2019_10_31_15_51\\my_keras_model.h5")
+model = load_model("E:\\KerasOutput\\run_2019_11_25_07_33\\my_keras_model.h5")
 
 doImageGen = True
+
+explainer = GradCAM()
 
 if doImageGen:
     eval_test_datagen = ImageDataGenerator(
@@ -41,6 +45,9 @@ if doImageGen:
     for img, label in test_generator:
 
         pred = model.predict(img)
+
+        grid1 = explainer.explain((img, None), model, 'mixed10', np.argmax(pred))
+
         c = LIST_OF_CLASSES[np.argmax(pred)]
 
         im = Image.open(test_generator.filepaths[test_generator.index_array[count]])
@@ -49,7 +56,22 @@ if doImageGen:
         # plt.imshow(np.squeeze(img))
         # # plt.title(c)
         # plt.subplot(212)
-        plt.imshow(np.squeeze(im))
+        img2 = np.squeeze(img)
+        img2 = img2 + 1
+        img2 = img2/2
+
+        fig = plt.figure(figsize=(18, 8))
+
+        ax1 = fig.add_subplot(1, 2, 1)
+        ax1.imshow(img2)
+        ax1.imshow(grid1, alpha=0.6)
+
+        ax2 = fig.add_subplot(1, 2, 2)
+        ax2.imshow(img2)
+
+
+        # plt.imshow(img2)
+        # plt.imshow(grid1, alpha=0.6)
 
         prob = np.round(np.max(pred)*100)
         if np.max(pred) > 0.50:

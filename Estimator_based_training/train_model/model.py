@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.python.keras import estimator as kes
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
-from train_model.input_fn import make_input_fn
+from Estimator_based_training.train_model.input_fn import make_input_fn
 
 
 def create_estimator(params):
@@ -65,9 +65,10 @@ def create_estimator(params):
 
     model.compile(
         loss="categorical_crossentropy",
-        optimizer=tf.train.AdamOptimizer(params['learning rate'],
-                                         beta1=0.9,
-                                         beta2=0.999),
+        optimizer=tf.keras.optimizers.Adam(),
+            # train.AdamOptimizer(params['learning rate'],
+            #                              beta1=0.9,
+            #                              beta2=0.999),
         # optimizer=tf.train.AdadeltaOptimizer(params['learning rate']),
         # optimizer=tf.train.RMSPropOptimizer(params['learning rate']),
         metrics=["categorical_accuracy"]
@@ -80,7 +81,7 @@ def create_estimator(params):
         )
     else:
 
-        config = tf.ConfigProto()
+        config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
         config.gpu_options.per_process_gpu_memory_fraction = 0.95
         # session_config = tf.contrib.learn.RunConfig(session_config=config)
@@ -116,7 +117,7 @@ def go_train(params):
     )
 
     # Set logging level
-    tf.logging.set_verbosity(tf.logging.DEBUG)
+    # tf.logging.set_verbosity(tf.logging.DEBUG)
 
     print("Starting training and evaluation ...")
 

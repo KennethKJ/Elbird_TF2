@@ -1,6 +1,8 @@
+print("Running stream")
 from tensorflow.keras.models import load_model
 import numpy as np
-from tensorflow.keras.applications.inception_v3 import preprocess_input
+# from tensorflow.keras.applications.inception_v3 import preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from matplotlib import pyplot as plt
 import os
 from tensorflow.keras.preprocessing import image
@@ -10,10 +12,17 @@ import datetime
 import seaborn as sns
 import pandas as pd
 
+print("Loading model")
 model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+print("Initializing variables")
 
-captures_folder = "C:\\Users\\alert\\AppData\\Roaming\\iSpy\\WebServerRoot\\Media\\Video\\UOOWS\\grabs\\"
-                  # "E:\\Electric Bird Caster\\Captured\\video\\TRARO\\grabs\\"
+develop = False
+
+if not develop:
+    captures_folder = "C:\\Users\\alert\\AppData\\Roaming\\iSpy\\WebServerRoot\\Media\\Video\\UOOWS\\grabs\\"
+else:
+    captures_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\Testing\\"
+
 dump_classified_imp_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\"
 
 pretty_names_list = [
@@ -53,7 +62,7 @@ bird_history = np.zeros([len(top_10), 60], dtype=np.int16)
 current_bird_count = np.zeros([len(top_10), 1])
 latest_labels = ['', '', '', '', '', '', '', '', '', '']
 
-detection_threshold = 0.50
+detection_threshold = 70
 
 def plot_IDhistory(history, pretty_names_list):
     # ax.clear()
@@ -97,6 +106,8 @@ ref_minute = gimme_minute()
 
 plot_IDhistory(bird_history, pretty_names_list)
 
+pred_history = np.zeros([1, len(pretty_names_list)+1])
+print("Starting loop")
 while 1 == 1:
 
     right_now = gimme_minute()
@@ -113,20 +124,89 @@ while 1 == 1:
     if files:
         for f in files:
             try:
-                img_pil = image.load_img(path=captures_folder + f, target_size=(224, 224, 3))
+                # img_pil = image.load_img(path=captures_folder + f)
+                img_pil = image.load_img(path=captures_folder + f)
+                w, h = img_pil.size
+                img_pil = img_pil.resize((int(w/3), int(h/3)))
+                # img_pil.show()
 
+                # im1 = im.crop((left, top, right, bottom))
                 img = image.img_to_array(img_pil)
 
-                im_np = preprocess_input(img)
+                H_anchor = 2 * 224 - 110 + 112 + 50 + 100
+                V_anchor = int(112-75+112+75-25)
+                move_factor_horizontal = H_anchor
+                move_factor_vertical = V_anchor
+                sub_img1 = img[0+move_factor_vertical:224+move_factor_vertical, 0+move_factor_horizontal:224+move_factor_horizontal, :]
 
-                pred = model.predict(np.expand_dims(im_np, axis=0))
-                prob = np.round(np.max(pred) * 100)
+                move_factor_horizontal = H_anchor + 112
+                move_factor_vertical = V_anchor
+                sub_img2 = img[0+move_factor_vertical:224+move_factor_vertical, 0+move_factor_horizontal:224+move_factor_horizontal, :]
 
-                bird_idx = np.argmax(pred)
+                move_factor_horizontal = H_anchor + 224
+                move_factor_vertical = V_anchor
+                sub_img3 = img[0+move_factor_vertical:224+move_factor_vertical, 0+move_factor_horizontal:224+move_factor_horizontal, :]
 
-                if bird_idx != 3:
+                doPlot = False
+                if doPlot:
+                    fig = plt.figure(figsize=(18, 8))
 
-                     if np.max(pred) > detection_threshold:
+                    ax1 = fig.add_subplot(1, 3, 1)
+                    ax1.imshow(sub_img1/255)
+
+                    ax2 = fig.add_subplot(1, 3, 2)
+                    ax2.imshow(sub_img2/255)
+
+                    ax3 = fig.add_subplot(1, 3, 3)
+                    ax3.imshow(sub_img3/255)
+
+                    plt.show()
+                    plt.close(fig)
+
+                im_np1 = preprocess_input(sub_img1)
+                im_np2 = preprocess_input(sub_img2)
+                im_np3 = preprocess_input(sub_img3)
+
+                im_np1 = np.expand_dims(im_np1, axis=0)
+                im_np2 = np.expand_dims(im_np2, axis=0)
+                im_np3 = np.expand_dims(im_np3, axis=0)
+
+                im_final = np.concatenate((im_np1, im_np2, im_np3))
+
+                pred = model.predict(im_final)
+
+                preddy1, preddy2, preddy3 = pred
+
+                bird_idx1 = np.argmax(preddy1)
+                bird_idx2 = np.argmax(preddy2)
+                bird_idx3 = np.argmax(preddy3)
+
+                prob1 = preddy1[bird_idx1]
+                prob2 = preddy2[bird_idx2]
+                prob3 = preddy3[bird_idx3]
+
+                bird_idx = 3  # will be 3 if the below doesn't change it
+                if bird_idx1 != 3:
+                    bird_idx = bird_idx1
+                    pred = preddy1
+
+                if bird_idx2 != 3 and prob2 > prob1:
+                    bird_idx = bird_idx2
+                    pred = preddy2
+
+                if bird_idx3 != 3 and prob3 > prob2:
+                    bird_idx = bird_idx3
+                    pred = preddy3
+
+                if bird_idx != 1000:
+                    new_data = np.append(time.time(), pred)
+                    new_data = np.reshape(new_data, [1, 29])
+                    pred_history = np.append(pred_history, new_data, axis=0)
+                    instant_prob = pred[bird_idx]*100
+                    prob = np.round(np.mean(pred_history[-3:, bird_idx + 1]) * 100)
+                    print("Instant prob: " + pretty_names_list[bird_idx] + " (" + str(int(instant_prob)) + "%)")
+
+                    if prob > 0:  #  detection_threshold:
 
                         current_bird_count[bird_idx] += 1
 
@@ -147,21 +227,37 @@ while 1 == 1:
 
                         current_class_file = open(dump_classified_imp_folder + "Current_Classification.txt", "w+")
                         timmy = str(datetime.datetime.now())
-                        timmy = timmy[11:19]
+                        timmy = timmy[11:16]
+
                         if prob > detection_threshold:
-                            current_class_file.write(pretty_names_list[bird_idx] + " (" + timmy + ")")
+                            current_class_file.write(pretty_names_list[bird_idx] + " (" + timmy + "; " + str(int(prob)) + "%)")
                         else:
-                            current_class_file.write("Not sure" + " (" + timmy + ";" + str(prob) + "%)")
+                            current_class_file.write("Not sure" + " (" + timmy + ";" + str(int(prob)) + "%)")
 
                         current_class_file.close()
 
-                os.remove(captures_folder + f)
+                        #  Save classified pics
+                        move_factor_horizontal = H_anchor
+                        move_factor_vertical = V_anchor
+                        published_img = img[move_factor_vertical:224 + move_factor_vertical,
+                                            move_factor_horizontal:2*224 + move_factor_horizontal, :]
 
+                        fig = plt.figure(figsize=(18, 8))
+                        fig.imshow(sub_img1 / 255)
+                        #
+                        plt.savefig(dump_classified_imp_folder + "current_bird.png")
+                        # # plt.show()
+                        # plt.close(fig)
 
+                        time.sleep(0.1)
+                        print(pretty_names_list[bird_idx] + " (" + timmy + "; " + str(int(prob)) + "%)")
+
+                if not develop:
+                    os.remove(captures_folder + f)
 
             except:
                 print("Error reading file!")
-
+                time.sleep(0.5)  #
 
     else:
         # If no files were found in the capture folder this round
