@@ -34,8 +34,9 @@ class SingleMotionDetector:
 
 		# find contours in the thresholded image and initialize the
 		# minimum and maximum bounding box regions for motion
-		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-			cv2.CHAIN_APPROX_SIMPLE)
+		cnts = cv2.findContours(thresh.copy(),
+								cv2.RETR_EXTERNAL,
+								cv2.CHAIN_APPROX_SIMPLE)
 		cnts = imutils.grab_contours(cnts)
 		(minX, minY) = (np.inf, np.inf)
 		(maxX, maxY) = (-np.inf, -np.inf)

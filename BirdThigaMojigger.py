@@ -25,12 +25,12 @@ batch_size = 16
 num_epochs = 50
 dropout_pc = 0.65
 optimizer = 'Adam'
-# loss = 'categorical_crossentropy'
-loss = 'binary_crossentropy'
+loss = 'categorical_crossentropy'
+# loss = 'binary_crossentropy'
 selected_model = "MobileNetV2"
-output_activation ='sigmoid'
+output_activation ='softmax'
 
-train_from_beginning = False
+train_from_beginning = True
 
 if train_from_beginning:
 
@@ -113,9 +113,9 @@ if train_from_beginning:
         # this is the model we will train
         model = Model(inputs=base_model.input, outputs=predictions)
         for layer in model.layers:
+            layer.trainable = False
+        for layer in model.layers[2:]:
             layer.trainable = True
-        # for layer in model.layers[65:]:
-        #     layer.trainable = True
 
 
 
@@ -146,7 +146,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 def my_preprocess(img):
-    s = np.random.rand()*4
+    s = np.random.rand()*1.5
     img = gau(img, sigma=s, multichannel=True)
     img = preprocess_input(img)
     return img
