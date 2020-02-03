@@ -130,7 +130,7 @@ IP_address = "192.168.10.104"
 rtsp_port = "554"
 channel = "1"
 subtype = "0"
-ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
+# ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
 
 ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
      ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
@@ -183,46 +183,47 @@ ax1 = fig.add_subplot(1, 1, 1)
 # Motion detectpr
 motion = smd.SingleMotionDetector()
 
+plot_objects = None
+th = None
 
-
+frames_btw_obj_detect = 3
+counter = 0
 print("Starting loop")
 while 1 == 1:
 
+    # Grab next frame from camera
     ret, frame = cap.read()
 
     if frame is None:
         print('Frame was None')
         cap = cv2.VideoCapture(ss)
         ret, frame = cap.read()
-
-    else:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # cv2.imshow("Mokker", frame)
-
-        frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-
-        motion.update(frame_bw)
-        X = motion.detect(frame_bw)
-
-        if X is not None:
-            th, coords = X
-            # # # Plot snippet
-            # fig = plt.figure(figsize=(18, 8))
-            # ax1 = fig.add_subplot(1, 1, 1)
-            # ax1.imshow(th.astype(int))
-
-            minX, minY, maxX, maxY = coords
-            w = maxX - minX
-            h = maxY - minY
-            move_rect = patches.Rectangle((minX, minY), w, h, linewidth=2, edgecolor='r', facecolor='none')
-            # ax1.add_patch(rect)
-
-            # plt.show()
-            # plt.close(fig)
+        counter = 0
 
 
+    # Increase frame number  up
+    counter += 1
 
+    # Change color format
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    # Clear axis and add current frame
+    ax1.clear()
+    ax1.imshow(frame.astype(int))
+
+    # Motion detection
+    frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    motion.update(frame_bw)
+    X = motion.detect(frame_bw)
+    if X is not None:
+        th, bounding_boxes = X
+
+        for bb in bounding_boxes:
+            x, y, w, h = bb
+            rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor='r', facecolor='none')
+            ax1.add_patch(rect)
+
+        # Check if it is time to update stats
         right_now = gimme_minute()
         if ref_minute != right_now:
             ref_minute = gimme_minute()
@@ -233,18 +234,11 @@ while 1 == 1:
             # Update figure
             plot_IDhistory(bird_history, pretty_names_list)
 
+    # If the set # of frames has past, do object detection
+    if counter >= frames_btw_obj_detect:
+        # Reset counter
+        counter = 0
 
-        # img_pil = image.load_img(path=captures_folder + f)
-        # img_pil = image.load_img(path=captures_folder + f)
-        # cv2.load
-
-        h, w, _ = frame.shape    # img_pil = img_pil.resize((int(w/3), int(h/3)))
-        # img_pil.show()
-
-        # im1 = im.crop((left, top, right, bottom))
-        # img = image.img_to_array(img_pil)
-
-        # Grab image snippets accoding to window ans step sizes
         all_image_snippets = np.zeros((num_images, target_img_size[0], target_img_size[1], 3))
         count = 0
         for i_h in range(num_steps[0]):
@@ -309,35 +303,36 @@ while 1 == 1:
         pred_mean = pred_mean * idx2
         classes = bird_idx * idx2
 
-        ax1.clear()
-        ax1.imshow(frame.astype(int))
-
-        #               i_v * step_size[1]: i_v * step_size[1] + win_size[1],  # width
         cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+        plot_objects = []
+
+        # Looping over each detected class
         for k, c in enumerate(np.unique(classes[classes != 0])):
+
+            # Find windows where current class is present
             idx = np.where(classes == c)
+
+            # Convert idx variable to a list of tuple (y, x) coordinates (idx is two arrays of [y] and [x]'s)
             coords = []
             for j in range(len(idx[0])):
                 coords.append((idx[0][j], idx[1][j]))
 
-
-            # for i in range(len(idx[0])):
-            cluster_list = []
+            # Calculate the euclidian distance between windows with current class ID'ed
+            #   and test which ones are less that the specified distance apart
             d = distance.cdist(coords, coords, 'euclidean') <= 6
 
+            #  Then make a list of the clusters of the current class that are the specified distance apart (i.e. j == True)_
+            cluster_list = []
             current_d_idx = 0
             while True:
-
                 cluster_list.append([coords[i] for i, j in enumerate(d[current_d_idx]) if j == True])
-
                 current_d_idx += len(d[0][d[current_d_idx]])
-
                 if current_d_idx >= len(d[0]):
                     break
 
-
-
+            # For each cluster of the current class, calculate a "bounding box" and make a rect object
             for C in cluster_list:
                 C_array = np.array(C)
                 x_min = step_size[1] * np.min(C_array[:, 1])
@@ -348,29 +343,30 @@ while 1 == 1:
                 w = x_max - x_min #- int(win_size[1]/2)
                 h = y_max - y_min #- int(win_size[0]/2)
                 rect = patches.Rectangle((x_min, y_min), w, h, linewidth=1, edgecolor=cols[k], facecolor='none')
-                # rect = patches.Rectangle((500, 1000), 2000, 250, linewidth=1, edgecolor=cols[k], facecolor='none')
-            #
-            # # (xy, width, height, angle=0.0, ** kwargs)[source]¶
-            #
-            #
-            # y = idx[0][i] * step_size[0]
-            # x = idx[1][i]  * step_size[1]
-            # # Create a Rectangle patch
-            # rect = patches.Rectangle((x, y), win_size[0], win_size[1], linewidth=1, edgecolor=cols[k], facecolor='none')
 
-            # Add the patch to the Axes
-                ax1.add_patch(rect)
-                ax1.text(x_min, y_min, pretty_names_list[c], fontsize=14,
-                        verticalalignment='top', bbox=props)
-            # plt.show()
-        if X is not None:
-            ax1.add_patch(move_rect)
+                plot_objects.append((rect, (x_min, y_min, c)))
 
-        plt.draw()
-        plt.pause(0.02)
-        plt.ioff()
-        plt.show()
-        plt.close(fig)
+    if th is not None:
+        ax1.imshow(th, alpha=0.6)
 
-        # time.sleep(1)  #
+    if plot_objects is not None:
+        for rc, txt_info in plot_objects:
+
+            ax1.add_patch(rc)
+
+            x_min, y_min, c = txt_info
+            ax1.text(x_min,
+                     y_min,
+                     pretty_names_list[c],
+                     fontsize=14,
+                     verticalalignment='top',
+                     bbox=props)
+
+    plt.draw()
+    plt.pause(0.02)
+    plt.ioff()
+    plt.show()
+    # plt.close(fig)
+
+    # time.sleep(1)  #
 
