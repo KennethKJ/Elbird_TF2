@@ -22,7 +22,11 @@ print("Loading model")
 import matplotlib
 matplotlib.use("TkAgg")
 
-model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+# model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+
+model = None
+
+
 print("Initializing variables")
 
 develop = True
@@ -137,7 +141,14 @@ ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
 
 print(ss)
 
-cap = cv2.VideoCapture(ss)
+doAVI = True
+
+if doAVI:
+    # cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\Test1.avi")
+    cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\sun and birds.avi")
+else:
+    cap = cv2.VideoCapture(ss)
+
 ret, frame = cap.read()
 if frame is None:
     print('Not able to grab images from IP cam!')
@@ -186,9 +197,17 @@ motion = smd.SingleMotionDetector()
 plot_objects = None
 th = None
 
-frames_btw_obj_detect = 3
+frames_btw_obj_detect = 100
 counter = 0
 print("Starting loop")
+
+# Initializations
+ret, frame = cap.read()
+frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+motion.update_bg(frame_bw)
+motion.update_bg_main(frame_bw)
+
 while 1 == 1:
 
     # Grab next frame from camera
@@ -202,7 +221,8 @@ while 1 == 1:
 
 
     # Increase frame number  up
-    counter += 1
+    # counter += 1
+    counter = 1
 
     # Change color format
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -213,7 +233,6 @@ while 1 == 1:
 
     # Motion detection
     frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    motion.update(frame_bw)
     X = motion.detect(frame_bw)
     if X is not None:
         th, bounding_boxes = X
@@ -347,7 +366,7 @@ while 1 == 1:
                 plot_objects.append((rect, (x_min, y_min, c)))
 
     if th is not None:
-        ax1.imshow(th, alpha=0.6)
+        ax1.imshow(th, alpha=0.3)
 
     if plot_objects is not None:
         for rc, txt_info in plot_objects:
@@ -361,6 +380,54 @@ while 1 == 1:
                      fontsize=14,
                      verticalalignment='top',
                      bbox=props)
+
+    if motion.updated:
+        props2 = dict(boxstyle='round', facecolor='white', alpha=0.5)
+
+        ax1.text(10,
+                 10,
+                 "UPDATED",
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        ax1.text(10,
+                 100,
+                 "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        ax1.text(10,
+                 200,
+                 "Thresh sum: " + str(int(motion.sum_thresh_bg)),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+    else:
+        props2 = dict(boxstyle='round', facecolor='red', alpha=0.5)
+
+        ax1.text(10,
+                 10,
+                 "NOT UPDATED",
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        ax1.text(10,
+                 100,
+                 "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        ax1.text(10,
+                 200,
+                 "Thresh sum: " + str(int(motion.sum_thresh_bg)),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
 
     plt.draw()
     plt.pause(0.02)
