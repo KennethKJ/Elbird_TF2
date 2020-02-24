@@ -136,18 +136,25 @@ channel = "1"
 subtype = "0"
 # ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
 
-ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
-     ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
 
-print(ss)
 
-doAVI = True
+
+
+doAVI = False
 
 if doAVI:
-    # cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\Test1.avi")
-    cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\sun and birds.avi")
-else:
+    # ss = "E:\Electric Bird Caster\Videos\Test1.avi"
+    ss = "E:\Electric Bird Caster\Videos\Testy.avi"
+
     cap = cv2.VideoCapture(ss)
+    # cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\sun and birds.avi")
+else:
+    ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
+         ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
+    cap = cv2.VideoCapture(ss)
+
+
+print("Video source: " + ss)
 
 ret, frame = cap.read()
 if frame is None:
