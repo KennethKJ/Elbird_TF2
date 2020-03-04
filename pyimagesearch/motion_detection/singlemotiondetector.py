@@ -6,10 +6,10 @@ import cv2
 
 class SingleMotionDetector:
 
-	def __init__(self, accumWeight = 0.6):  # 0.4
+	def __init__(self, accumWeight = 0.99):  # 0.4
 		# store the accumulated weight factor
 		self.accumWeight_bg = accumWeight
-		self.accumWeight_bg_main = 0.2
+		self.accumWeight_bg_main = 0.005
 
 		# initialize the background model
 		self.bg = None
@@ -46,7 +46,7 @@ class SingleMotionDetector:
 		# average
 		cv2.accumulateWeighted(image, self.bg_main, self.accumWeight_bg_main)
 
-	def detect(self, image, tVal = 8):
+	def detect(self, image, tVal = 10):
 
 		# Add blur to avoid specles
 		image = cv2.GaussianBlur(image, (21, 21), 0)
@@ -72,7 +72,7 @@ class SingleMotionDetector:
 		th1_bg = thresh_bg/255
 
 		# Calculate
-		self.sum_thresh_bg = sum(sum(th1_bg))
+		self.sum_thresh_bg = np.sum(th1_bg)
 
 
 		# BG MAIN
@@ -87,7 +87,7 @@ class SingleMotionDetector:
 		thresh_bg_main = cv2.dilate(thresh_bg_main, None, iterations=2)
 
 		th1_bg_main = thresh_bg_main/255
-		self.sum_thresh_bg_main = sum(sum(th1_bg_main))
+		self.sum_thresh_bg_main = np.sum(th1_bg_main)
 
 		self.counter = self.counter + 1
 
@@ -95,7 +95,12 @@ class SingleMotionDetector:
 
 			# find contours in the thresholded image and initialize the
 			# minimum and maximum bounding box regions for motion
-			cnts = cv2.findContours(thresh_bg_main.copy(),
+			if len(thresh_bg_main.shape)> 2:
+				thresh_bg_main_2D = np.sum(thresh_bg_main.copy(), 2).astype(np.uint8)
+			else:
+				thresh_bg_main_2D = thresh_bg_main.copy()
+
+			cnts = cv2.findContours(thresh_bg_main_2D,
 									cv2.RETR_EXTERNAL,
 									cv2.CHAIN_APPROX_SIMPLE)
 
@@ -103,10 +108,11 @@ class SingleMotionDetector:
 
 			C = []
 			C_small = []
+			thrsh = 8000
 			for cnt in cnts:
-				if cv2.contourArea(cnt) > 8000:
+				if cv2.contourArea(cnt) > thrsh:
 					C.append(cv2.boundingRect(cnt))
-				elif cv2.contourArea(cnt) < 8000:
+				elif cv2.contourArea(cnt) < thrsh:
 					C_small.append(cv2.boundingRect(cnt))
 
 
@@ -134,7 +140,7 @@ class SingleMotionDetector:
 
 
 				# Expand boxes with margin
-				margin = 20
+				margin = 80
 				for i, c in enumerate(C):
 
 					# Expand box with margin
@@ -155,7 +161,7 @@ class SingleMotionDetector:
 			C = None
 
 
-		smart_update = True
+		smart_update =  True
 
 		continuous_update = False
 

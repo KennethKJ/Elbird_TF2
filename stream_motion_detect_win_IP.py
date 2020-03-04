@@ -17,11 +17,16 @@ from scipy.spatial import distance
 
 from pyimagesearch.motion_detection import singlemotiondetector as smd
 
+import pyttsx3
 
 import matplotlib
 matplotlib.use("TkAgg")
 
 doNN = False
+
+engine = pyttsx3.init()
+engine.say("Initializing bird detector")
+engine.runAndWait()
 
 
 if doNN:
@@ -135,14 +140,11 @@ pred_history = np.zeros([1, 3, len(pretty_names_list)])
 # Initialize IP cam
 username = "admin"
 password = "JuLian50210809"
-IP_address = "192.168.10.104"
+IP_address = "192.168.10.100"
 rtsp_port = "554"
 channel = "1"
 subtype = "0"
 # ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
-
-
-
 
 
 doAVI = True
@@ -158,6 +160,11 @@ else:
     ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
          ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
     cap = cv2.VideoCapture(ss)
+
+
+frame_no = 0
+property = cv2.CAP_PROP_POS_FRAMES
+cap.set(property, frame_no)
 
 
 print("Video source: " + ss)
