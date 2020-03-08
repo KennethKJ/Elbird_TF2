@@ -299,7 +299,6 @@ while 1 == 1:
                 mid_x_v = x + np.int(w/2)
                 mid_y_h = y + np.int(h/2)
 
-                active_windows.append((mid_y_h, mid_x_v))
 
                 for v in range(1 + 2*go_vertical):
                     for h in range(1 + 2*go_horizontal):
@@ -317,6 +316,8 @@ while 1 == 1:
                         # Make sure we don't go below zero
                         v_start_pixel = np.max([v_start_pixel, 0])
 
+                        active_windows.append((h_start_pixel, v_start_pixel))
+
                         # Grab window from the frame
                         img_snippet = frame[h_start_pixel: h_start_pixel + win_size[0],  # height
                                             v_start_pixel: v_start_pixel + win_size[1],  # width
@@ -330,30 +331,17 @@ while 1 == 1:
                         count += 1
 
 
-                # th_snippet = th[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
-                #                   i_v * step_size[1]: i_v * step_size[1] + win_size[1]] /255 # channels
+                        # # Plot snippet
+                        # fig = plt.figure(figsize=(18, 8))
+                        # ax1 = fig.add_subplot(1, 1, 1)
+                        # ax1.imshow(img_snippet.astype(int))
+                        # plt.show()
+                        # plt.close(fig)
 
-                # percent_movement = np.sum(th_snippet)/th.size * 100
-                # max_percent_movement = np.max([max_percent_movement, percent_movement])
-                # if percent_movement > 1:
-                    # active_windows.append((i_h, i_v))
-                    # img_snippet = frame[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
-                    #                   i_v * step_size[1]: i_v * step_size[1] + win_size[1],  # width
-                    #                   :]  # channels
-
-
-
-                    # # Plot snippet
-                    # fig = plt.figure(figsize=(18, 8))
-                    # ax1 = fig.add_subplot(1, 1, 1)
-                    # ax1.imshow(img_snippet.astype(int))
-                    # plt.show()
-                    # plt.close(fig)
-
-            print('____________________________________________________')
-            print('Time: ' + str(datetime.datetime.now()))
-            print('Max percent movement: {}'.format(max_percent_movement))
-            print('Number of windows: {}'.format(count))
+            # print('____________________________________________________')
+            # print('Time: ' + str(datetime.datetime.now()))
+            # print('Max percent movement: {}'.format(max_percent_movement))
+            # print('Number of windows: {}'.format(count))
 
             if all_image_snippets.shape[0] != 0:
                 # Pre process all image snippets
@@ -370,49 +358,36 @@ while 1 == 1:
                 bird_idx = np.argmax(pred, axis=1)
                 pred_max = np.max(pred, axis=1)*100
 
-                bird_idx_2D = np.zeros((1, num_steps[0], num_steps[1])).astype(np.int)
-                pred_max_2D = np.zeros((1, num_steps[0], num_steps[1])).astype(np.int)
-
-                for i, bi in enumerate(bird_idx):
-                    h, v = active_windows[i]
-                    bird_idx_2D[0, h, v] = bi
-                    pred_max_2D[0, h, v] = pred_max[i]
-
-
-                # Update bird idx history
-                if len(bird_idx_history_2D[:, 1, 1]) > 10:  # Keep only last 10
-                    bird_idx_history_2D = np.delete(bird_idx_history_2D, 0, 0)
-                bird_idx_history_2D = np.concatenate((bird_idx_history_2D, bird_idx_2D))
 
                 ## BIRD PREDICTIONS
                 # Reshape prediction and convert to percentages
                 # pred = np.reshape(np.max(pred, axis=1), (num_steps[0], num_steps[1]))*100
 
                 # Zero out the "no bird" detections
-                pred_max_2D[bird_idx_2D == 3] = 0
-
+                # pred_max_2D[bird_idx_2D == 3] =
+                0
                 # Update prediction history
-                if len(pred_history_2D[:, 1, 1]) > 10:  # Keep only last 10
-                    pred_history_2D = np.delete(pred_history_2D, 0, 0)
-                pred_history_2D = np.concatenate((pred_history_2D, pred_max_2D))
+                # if len(pred_history_2D[:, 1, 1]) > 10:  # Keep only last 10
+                #     pred_history_2D = np.delete(pred_history_2D, 0, 0)
+                # pred_history_2D = np.concatenate((pred_history_2D, pred_max_2D))
 
                 ## MATRIX OF DETECTED CLASSES AND PROPs
                 # Find where bird idx was the same the last 3 times (std = 0) and not equal to background (3)
-                idx = np.std(bird_idx_history_2D[-3:, :, :], axis=0) + (bird_idx_2D == 3) == 0
+                # idx = np.std(bird_idx_history_2D[-3:, :, :], axis=0) + (bird_idx_2D == 3) == 0
 
                 # Calculate mean and use idx to zero out elements of no interets
-                pred_mean = np.round(np.mean(pred_history_2D[-3:, :, :], axis=0) * idx).astype(int)
-                pred_mean = np.squeeze(pred_mean)
+                # pred_mean = np.round(np.mean(pred_history_2D[-3:, :, :], axis=0) * idx).astype(int)
+                # pred_mean = np.squeeze(pred_mean)
 
                 # Get index of all elements that are larger than threshold
-                idx2 = pred_mean > detection_threshold
+                # idx2 = pred_mean > detection_threshold
 
                 # Get teh mean probability and teh index of the final selected classes
-                pred_mean = pred_mean * idx2
-                classes = bird_idx_2D * idx2
-                classes = np.squeeze(classes)
+                # pred_mean = pred_mean * idx2
+                # classes = bird_idx_2D * idx2
+                # classes = np.squeeze(classes)
 
-                cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
+# HERE!                cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
                 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
                 plot_objects = []
