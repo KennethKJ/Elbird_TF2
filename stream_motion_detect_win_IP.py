@@ -147,7 +147,7 @@ subtype = "0"
 # ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
 
 
-doAVI = False
+doAVI = True
 
 if doAVI:
     # ss = "E:\Electric Bird Caster\Videos\Test1.avi"
@@ -277,50 +277,71 @@ while 1 == 1:
         #     rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor='r', facecolor='none')
         #     ax1.add_patch(rect)
 
-        # Check if it is time to update stats
-        right_now = gimme_minute()
-        if ref_minute != right_now:
-            ref_minute = gimme_minute()
-            bird_history[:, 1:] = bird_history[:, 0:-1]
-            bird_history[:, 0] = np.squeeze(current_bird_count)
-            current_bird_count = np.zeros([len(top_10), 1])
+        plot_objects = None
 
-            # Update figure
-            plot_IDhistory(bird_history, pretty_names_list)
+        # If the set # of frames has past, do object detection
+        if counter >= frames_btw_obj_detect and bounding_boxes != [] and doNN:
+            # Reset counter
+            counter = 0
 
-    plot_objects = None
-
-    # If the set # of frames has past, do object detection
-    if counter >= frames_btw_obj_detect and doNN:
-        # Reset counter
-        counter = 0
-
-        if X is not None and bounding_boxes != []:
 
             all_image_snippets = np.zeros((num_images, target_img_size[0], target_img_size[1], 3))
             count = 0
             max_percent_movement = 0
             active_windows = []
             all_image_snippets = np.zeros((0,target_img_size[0], target_img_size[1], 3)).astype(np.int)
-            for i_h in range(num_steps[0]):
-                for i_v in range(num_steps[1]):
 
-                    th_snippet = th[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
-                                      i_v * step_size[1]: i_v * step_size[1] + win_size[1]] /255 # channels
+            go_vertical = 1
+            go_horizontal = 1
+            for bb in bounding_boxes:
+                x, y, w, h = bb
 
-                    percent_movement = np.sum(th_snippet)/th.size * 100
-                    max_percent_movement = np.max([max_percent_movement, percent_movement])
-                    if percent_movement > 1:
-                        active_windows.append((i_h, i_v))
-                        img_snippet = frame[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
-                                          i_v * step_size[1]: i_v * step_size[1] + win_size[1],  # width
-                                          :]  # channels
+                mid_x_v = x + np.int(w/2)
+                mid_y_h = y + np.int(h/2)
 
+                active_windows.append((mid_y_h, mid_x_v))
+
+                for v in range(1 + 2*go_vertical):
+                    for h in range(1 + 2*go_horizontal):
+
+                        # Define horizontal (y) start pixel
+                        h_start_pixel = mid_y_h + (v-go_vertical)*step_size[0]
+                        # Make sure we don't go past image height
+                        h_start_pixel = np.min([h_start_pixel + win_size[0], frame.shape[0]-win_size[0]])
+                        # Make sure we don't go below zero
+                        h_start_pixel = np.max([h_start_pixel, 0])
+
+                        v_start_pixel = mid_x_v + (h-go_horizontal)*step_size[1]
+                        # Make sure we don't go past image width
+                        v_start_pixel = np.min([v_start_pixel + win_size[1], frame.shape[1]-win_size[1]])
+                        # Make sure we don't go below zero
+                        v_start_pixel = np.max([v_start_pixel, 0])
+
+                        # Grab window from the frame
+                        img_snippet = frame[h_start_pixel: h_start_pixel + win_size[0],  # height
+                                            v_start_pixel: v_start_pixel + win_size[1],  # width
+                                            :]  # channels
+
+                        # Resize to NN image size requirement
                         img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
 
-                        # all_image_snippets[count, :, :, :] = img_snippet
+                        # Stack onto collection of images to run NN on
                         all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
                         count += 1
+
+
+                # th_snippet = th[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
+                #                   i_v * step_size[1]: i_v * step_size[1] + win_size[1]] /255 # channels
+
+                # percent_movement = np.sum(th_snippet)/th.size * 100
+                # max_percent_movement = np.max([max_percent_movement, percent_movement])
+                # if percent_movement > 1:
+                    # active_windows.append((i_h, i_v))
+                    # img_snippet = frame[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
+                    #                   i_v * step_size[1]: i_v * step_size[1] + win_size[1],  # width
+                    #                   :]  # channels
+
+
 
                     # # Plot snippet
                     # fig = plt.figure(figsize=(18, 8))
@@ -437,8 +458,8 @@ while 1 == 1:
                         class_text = pretty_names_list[c] + ' (' + str(cluster_prop) + '%)'
                         plot_objects.append((rect, (x_min, y_min, class_text)))
 
-    # if th is not None:
-    #     ax1.imshow(th, alpha=0.3)
+        # if th is not None:
+        #     ax1.imshow(th, alpha=0.3)
 
     if plot_objects is not None:
         for rc, txt_info in plot_objects:
@@ -505,10 +526,25 @@ while 1 == 1:
                  verticalalignment='top',
                  bbox=props2)
 
+
+
+    # # Check if it is time to update stats
+    # right_now = gimme_minute()
+    # if ref_minute != right_now:
+    #     ref_minute = gimme_minute()
+    #     bird_history[:, 1:] = bird_history[:, 0:-1]
+    #     bird_history[:, 0] = np.squeeze(current_bird_count)
+    #     current_bird_count = np.zeros([len(top_10), 1])
+    #
+    #     # Update figure
+    #     plot_IDhistory(bird_history, pretty_names_list)
+
     plt.draw()
     plt.pause(0.02)
     plt.ioff()
     plt.show()
+
+
     # plt.close(fig)
 
     # time.sleep(0.5)  #
