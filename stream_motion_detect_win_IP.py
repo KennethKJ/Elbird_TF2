@@ -147,7 +147,7 @@ subtype = "0"
 # ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
 
 
-doAVI = True
+doAVI = False
 
 if doAVI:
     # ss = "E:\Electric Bird Caster\Videos\Test1.avi"
@@ -241,6 +241,7 @@ while 1 == 1:
 
     if frame is None:
         print('Frame was None')
+        cap.release()
         cap = cv2.VideoCapture(ss)
         ret, frame = cap.read()
         counter = 0
@@ -250,8 +251,16 @@ while 1 == 1:
     counter += 1
     # counter = 1
 
-    # Change color format
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    try:
+        # Change color format
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    except:
+        frame = None
+        print("I think there was no frame. Internet might be out. Waiting 10 secs and trying again")
+        time.sleep(10)
+        continue
+
+
 
     # Clear axis and add current frame
     ax1.clear()
@@ -301,7 +310,7 @@ while 1 == 1:
 
                     percent_movement = np.sum(th_snippet)/th.size * 100
                     max_percent_movement = np.max([max_percent_movement, percent_movement])
-                    if percent_movement > 0.4:
+                    if percent_movement > 1:
                         active_windows.append((i_h, i_v))
                         img_snippet = frame[i_h * step_size[0]: i_h * step_size[0] + win_size[0],  # height
                                           i_v * step_size[1]: i_v * step_size[1] + win_size[1],  # width
@@ -320,7 +329,10 @@ while 1 == 1:
                     # plt.show()
                     # plt.close(fig)
 
+            print('____________________________________________________')
+            print('Time: ' + str(datetime.datetime.now()))
             print('Max percent movement: {}'.format(max_percent_movement))
+            print('Number of windows: {}'.format(count))
 
             if all_image_snippets.shape[0] != 0:
                 # Pre process all image snippets
@@ -425,8 +437,8 @@ while 1 == 1:
                         class_text = pretty_names_list[c] + ' (' + str(cluster_prop) + '%)'
                         plot_objects.append((rect, (x_min, y_min, class_text)))
 
-    if th is not None:
-        ax1.imshow(th, alpha=0.3)
+    # if th is not None:
+    #     ax1.imshow(th, alpha=0.3)
 
     if plot_objects is not None:
         for rc, txt_info in plot_objects:
@@ -440,6 +452,10 @@ while 1 == 1:
                      fontsize=14,
                      verticalalignment='top',
                      bbox=props)
+            print(txt + '(' + str(datetime.datetime.now()) + ')')
+            print('____________________________________________________')
+
+
 
     if motion.updated:
         props2 = dict(boxstyle='round', facecolor='white', alpha=0.5)
@@ -496,4 +512,3 @@ while 1 == 1:
     # plt.close(fig)
 
     # time.sleep(0.5)  #
-
