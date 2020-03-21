@@ -14,7 +14,7 @@ import pandas as pd
 import cv2
 import matplotlib.patches as patches
 from scipy.spatial import distance
-
+from itertools import compress
 from pyimagesearch.motion_detection import singlemotiondetector as smd
 
 import pyttsx3
@@ -75,18 +75,19 @@ pretty_names_list = [
     'Pileated woodpecker',
     'Red winged blackbird F/Im',
     'Red winged blackbird M',
-    'Squirrel!', # 25
+    'Squirrel!',  # 25
     'Tufted titmouse',
     'White breasted nuthatch']  # 27
 
-top_10 = [i for i in range(28)]
 
-bird_history = np.zeros([len(top_10), 60], dtype=np.int16)
+# top_10 = [i for i in range(28)]
 
-current_bird_count = np.zeros([len(top_10), 1])
+# bird_history = np.zeros([len(top_10), 60], dtype=np.int16)
+
+# current_bird_count = np.zeros([len(top_10), 1])
 latest_labels = ['', '', '', '', '', '', '', '', '', '']
 
-detection_threshold = 70
+detection_threshold = 50
 
 def plot_IDhistory(history, pretty_names_list):
     # ax.clear()
@@ -132,7 +133,7 @@ def gimme_minute():
 
 ref_minute = gimme_minute()
 
-plot_IDhistory(bird_history, pretty_names_list)
+# plot_IDhistory(bird_history, pretty_names_list)
 
 pred_history = np.zeros([1, 3, len(pretty_names_list)])
 
@@ -162,7 +163,7 @@ else:
     cap = cv2.VideoCapture(ss)
 
 
-frame_no = 0
+frame_no = 150
 property = cv2.CAP_PROP_POS_FRAMES
 cap.set(property, frame_no)
 
@@ -181,17 +182,18 @@ raw_image_shape = (h, w)  #  (height, width)
 
 
 # win_size = (int(h/6), int(h/6))
-win_size = (int(224*2), int(224*2))
+win_size = (int(224*1.25), int(224*1.25))
 
 target_img_size = (224, 224)
 
-step_size = (int(win_size[0]/6), int(win_size[1]/6))
+step_size = (int(win_size[0]/3), int(win_size[1]/3))
 
 num_steps = (int(np.floor((raw_image_shape[0]/step_size[0]) - 1)),
              int(np.floor((raw_image_shape[1]/step_size[1]) - 1)))
 
 
 frame_centers = np.zeros((2, num_steps[0], num_steps[1])).astype(int)
+
 
 for i in range(num_steps[0]):
     for j in range(num_steps[1]):
@@ -201,8 +203,8 @@ for i in range(num_steps[0]):
 
 num_images = num_steps[0] * num_steps[1]
 
-pred_history_2D = np.zeros((1, num_steps[0], num_steps[1]))
-bird_idx_history_2D = np.zeros((1, num_steps[0], num_steps[1])).astype(np.int)
+pred_history_2D = np.zeros((0, num_steps[0], num_steps[1]))
+bird_idx_history_2D = np.zeros((0, num_steps[0], num_steps[1])).astype(np.int)
 
 the_situation_idx = np.zeros((num_steps[0], num_steps[1])).astype(np.int)
 the_situation_prob = np.zeros((num_steps[0], num_steps[1]))
@@ -228,8 +230,8 @@ frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 motion.update_bg(frame_bw)
 motion.update_bg_main(frame_bw)
-
-
+colly = "rgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymc"
+loop_count = 0
 while 1 == 1:
 
     # DEBUG SETTINGS
@@ -277,7 +279,7 @@ while 1 == 1:
         #     rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor='r', facecolor='none')
         #     ax1.add_patch(rect)
 
-        plot_objects = None
+        # plot_objects = None
 
         # If the set # of frames has past, do object detection
         if counter >= frames_btw_obj_detect and bounding_boxes != [] and doNN:
@@ -285,63 +287,63 @@ while 1 == 1:
             counter = 0
 
 
-            all_image_snippets = np.zeros((num_images, target_img_size[0], target_img_size[1], 3))
+            # all_image_snippets = np.zeros((num_images, target_img_size[0], target_img_size[1], 3))
             count = 0
             max_percent_movement = 0
             active_windows = []
-            all_image_snippets = np.zeros((0,target_img_size[0], target_img_size[1], 3)).astype(np.int)
+            bb_centers = []
+            all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
 
             go_vertical = 1
             go_horizontal = 1
+            bb_count = 0
+            grid = np.zeros((num_steps[0], num_steps[1])).astype(np.bool)
+
             for bb in bounding_boxes:
+
                 x, y, w, h = bb
+
+                low_x = np.floor(x / step_size[1]).astype(np.int)
+                high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
+
+                low_y = np.floor(y / step_size[0]).astype(np.int)
+                high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
+
+                grid[low_y: high_y, low_x: high_x] = True
 
                 mid_x_v = x + np.int(w/2)
                 mid_y_h = y + np.int(h/2)
 
+                bb_centers.append((mid_y_h, mid_x_v))
 
-                for v in range(1 + 2*go_vertical):
-                    for h in range(1 + 2*go_horizontal):
+                circ = patches.Circle((mid_x_v, mid_y_h), radius=50, linewidth=1, edgecolor=colly[bb_count], facecolor='none')
+                ax1.add_patch(circ)
 
-                        # Define horizontal (y) start pixel
-                        h_start_pixel = mid_y_h + (v-go_vertical)*step_size[0]
-                        # Make sure we don't go past image height
-                        h_start_pixel = np.min([h_start_pixel + win_size[0], frame.shape[0]-win_size[0]])
-                        # Make sure we don't go below zero
-                        h_start_pixel = np.max([h_start_pixel, 0])
+                bb_count += 1
+                # rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor=colly[bb_count], facecolor='none')
+                # ax1.add_patch(rect)
 
-                        v_start_pixel = mid_x_v + (h-go_horizontal)*step_size[1]
-                        # Make sure we don't go past image width
-                        v_start_pixel = np.min([v_start_pixel + win_size[1], frame.shape[1]-win_size[1]])
-                        # Make sure we don't go below zero
-                        v_start_pixel = np.max([v_start_pixel, 0])
-
-                        active_windows.append((h_start_pixel, v_start_pixel))
+            x_s = []
+            y_s = []
+            for i in range(num_steps[0]):
+                for j in range(num_steps[1]):
+                    if grid[i, j]:
+                        x_s.append(j)
+                        y_s.append(i)
 
                         # Grab window from the frame
-                        img_snippet = frame[h_start_pixel: h_start_pixel + win_size[0],  # height
-                                            v_start_pixel: v_start_pixel + win_size[1],  # width
+                        img_snippet = frame[i*step_size[0]: i*step_size[0] + win_size[0],  # height
+                                            j*step_size[1]: j*step_size[1] + win_size[1],  # width
                                             :]  # channels
 
                         # Resize to NN image size requirement
-                        img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
+                        if img_snippet.shape[0:2] != target_img_size:
+                            img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
 
                         # Stack onto collection of images to run NN on
                         all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
                         count += 1
 
-
-                        # # Plot snippet
-                        # fig = plt.figure(figsize=(18, 8))
-                        # ax1 = fig.add_subplot(1, 1, 1)
-                        # ax1.imshow(img_snippet.astype(int))
-                        # plt.show()
-                        # plt.close(fig)
-
-            # print('____________________________________________________')
-            # print('Time: ' + str(datetime.datetime.now()))
-            # print('Max percent movement: {}'.format(max_percent_movement))
-            # print('Number of windows: {}'.format(count))
 
             if all_image_snippets.shape[0] != 0:
                 # Pre process all image snippets
@@ -354,87 +356,103 @@ while 1 == 1:
                 # print('Done')
 
                 ## BIRD IDX
+
                 # Get index of classified birds/animals
                 bird_idx = np.argmax(pred, axis=1)
+
+                bird_idx_2d = np.zeros(num_steps).astype(np.int)
+                bird_idx_2d[y_s, x_s] = bird_idx
+
+                # Get rid of background detections
+                bird_idx_2d[bird_idx_2d == 3] = 0
+
                 pred_max = np.max(pred, axis=1)*100
 
+                pred_max_2D = np.zeros(num_steps).astype(np.int)
+                pred_max_2D[y_s, x_s] = pred_max
 
-                ## BIRD PREDICTIONS
-                # Reshape prediction and convert to percentages
-                # pred = np.reshape(np.max(pred, axis=1), (num_steps[0], num_steps[1]))*100
+                # Get rid of background detections
+                pred_max_2D[bird_idx_2d == 0] = 0
 
-                # Zero out the "no bird" detections
-                # pred_max_2D[bird_idx_2D == 3] =
-                0
-                # Update prediction history
-                # if len(pred_history_2D[:, 1, 1]) > 10:  # Keep only last 10
-                #     pred_history_2D = np.delete(pred_history_2D, 0, 0)
-                # pred_history_2D = np.concatenate((pred_history_2D, pred_max_2D))
+                # # Get index of all elements that are larger than threshold
+                idx2 = pred_max_2D < detection_threshold
+                pred_max_2D[idx2] = 0
+                bird_idx_2d[idx2] = 0
 
-                ## MATRIX OF DETECTED CLASSES AND PROPs
-                # Find where bird idx was the same the last 3 times (std = 0) and not equal to background (3)
-                # idx = np.std(bird_idx_history_2D[-3:, :, :], axis=0) + (bird_idx_2D == 3) == 0
+                depth = 3
+                if len(pred_history_2D[:, 1, 1]) == depth:  # Keep only last 10
+                    pred_history_2D = np.delete(pred_history_2D, 0, 0)
+                    bird_idx_history_2D = np.delete(bird_idx_history_2D, 0, 0)
 
-                # Calculate mean and use idx to zero out elements of no interets
-                # pred_mean = np.round(np.mean(pred_history_2D[-3:, :, :], axis=0) * idx).astype(int)
-                # pred_mean = np.squeeze(pred_mean)
+                bird_idx_history_2D = np.concatenate((bird_idx_history_2D, np.expand_dims(bird_idx_2d, axis=0)))
+                pred_history_2D = np.concatenate((pred_history_2D, np.expand_dims(pred_max_2D, axis=0)))
 
-                # Get index of all elements that are larger than threshold
-                # idx2 = pred_mean > detection_threshold
+                # Continue if the full depth of the history is filled
+                if len(pred_history_2D[:, 1, 1]) >= depth:
+                    classes = bird_idx_history_2D
+                    plot_objects = []
+                    # Looping over each detected class
+                    for k, c in enumerate(np.unique(classes[classes != 0])):
 
-                # Get teh mean probability and teh index of the final selected classes
-                # pred_mean = pred_mean * idx2
-                # classes = bird_idx_2D * idx2
-                # classes = np.squeeze(classes)
+                        # Find windows where current class is present
+                        idx = np.where(classes == c)
 
-# HERE!                cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
-                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                        # Convert idx variable to a list of tuple (y, x) coordinates (idx is two arrays of [y] and [x]'s)
+                        coords = []
+                        for j in range(len(idx[0])):
+                            coords.append((idx[0][j], idx[1][j], idx[2][j]))
 
-                plot_objects = []
+                        #  Then make a list of the clusters of the current class that are the specified distance apart (i.e. j == True)_
+                        cluster_list = []
+                        max_dist = 4
+                        run_through = 0
+                        while coords != []:
+                            # Calculate the euclidian distance between windows with current class ID'ed
+                            #   and test which ones are less that the specified distance apart
+                            dist = distance.cdist(coords, coords, 'euclidean')
 
-                # Looping over each detected class
-                for k, c in enumerate(np.unique(classes[classes != 0])):
+                            d = np.logical_and(dist <= (run_through + 1) * max_dist, dist >= run_through*max_dist)
+                            # cluster_list.append([coords[i] for i, j in enumerate(d[current_d_idx]) if j == True])
+                            cluster_list.append([coords[i] for i, j in enumerate(d[0]) if j == True])
+                            coords = [coords[i] for i, j in enumerate(d[0]) if j == False]
 
-                    # Find windows where current class is present
-                    idx = np.where(classes == c)
 
-                    # Convert idx variable to a list of tuple (y, x) coordinates (idx is two arrays of [y] and [x]'s)
-                    coords = []
-                    for j in range(len(idx[0])):
-                        coords.append((idx[0][j], idx[1][j]))
+                        # For each cluster of the current class, calculate a "bounding box" and make a rect object
+                        for C in cluster_list:
 
-                    # Calculate the euclidian distance between windows with current class ID'ed
-                    #   and test which ones are less that the specified distance apart
-                    d = distance.cdist(coords, coords, 'euclidean') <= 6
+                            C_array = np.array(C)
 
-                    #  Then make a list of the clusters of the current class that are the specified distance apart (i.e. j == True)_
-                    cluster_list = []
-                    current_d_idx = 0
-                    while True:
-                        cluster_list.append([coords[i] for i, j in enumerate(d[current_d_idx]) if j == True])
-                        current_d_idx += len(d[0][d[current_d_idx]])
-                        if current_d_idx >= len(d[0]):
-                            break
+                            # if any(C_array[:, 0] == depth-1):
+                            #     break
 
-                    # For each cluster of the current class, calculate a "bounding box" and make a rect object
-                    for C in cluster_list:
-                        C_array = np.array(C)
-                        x_min = step_size[1] * np.min(C_array[:, 1])
-                        x_max = step_size[1] * np.max(C_array[:, 1]) + win_size[1]
-                        y_min = step_size[0] * np.min(C_array[:, 0])
-                        y_max = step_size[0] * np.max(C_array[:, 0]) + win_size[0]
+                            the_situation = [pred_history_2D[xyz[0], xyz[1], xyz[2]] for xyz in C_array]
+                            cluster_prop = np.mean(the_situation).astype(np.int)
 
-                        w = x_max - x_min #- int(win_size[1]/2)
-                        h = y_max - y_min #- int(win_size[0]/2)
-                        rect = patches.Rectangle((x_min, y_min), w, h, linewidth=1, edgecolor=cols[k], facecolor='none')
+                            if len(the_situation) > 5 and cluster_prop > 70:
 
-                        cluster_prop = np.mean([pred_mean[xy[0], xy[1]] for xy in C_array]).astype(np.int)
+                                x_min = step_size[1] * np.min(C_array[:, 2])
+                                x_max = step_size[1] * np.max(C_array[:, 2]) + win_size[1]
+                                y_min = step_size[0] * np.min(C_array[:, 1])
+                                y_max = step_size[0] * np.max(C_array[:, 1]) + win_size[0]
 
-                        class_text = pretty_names_list[c] + ' (' + str(cluster_prop) + '%)'
-                        plot_objects.append((rect, (x_min, y_min, class_text)))
+                                w = x_max - x_min  # - int(win_size[1]/2)
+                                h = y_max - y_min  # - int(win_size[0]/2)
 
-        # if th is not None:
-        #     ax1.imshow(th, alpha=0.3)
+                                x_mid = int(x_min + w/2)
+                                rect = patches.Rectangle((x_min, y_min), w, h, linewidth=3, edgecolor=colly[c],
+                                                         facecolor='none')
+
+                                class_text = pretty_names_list[c] + ' (' + str(cluster_prop) + '%)'
+                                plot_objects.append((rect, (x_min, y_min, class_text)))
+
+
+
+
+    cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+    if th is not None:
+        ax1.imshow(th, alpha=0.3)
 
     if plot_objects is not None:
         for rc, txt_info in plot_objects:
@@ -448,6 +466,7 @@ while 1 == 1:
                      fontsize=14,
                      verticalalignment='top',
                      bbox=props)
+
             print(txt + '(' + str(datetime.datetime.now()) + ')')
             print('____________________________________________________')
 
@@ -458,7 +477,7 @@ while 1 == 1:
 
         ax1.text(10,
                  10,
-                 "UPDATED",
+                 "Frame #: " + str(loop_count),
                  fontsize=16,
                  verticalalignment='top',
                  bbox=props2)
@@ -482,7 +501,7 @@ while 1 == 1:
 
         ax1.text(10,
                  10,
-                 "NOT UPDATED",
+                 "Frame #: " + str(loop_count),
                  fontsize=16,
                  verticalalignment='top',
                  bbox=props2)
@@ -502,7 +521,6 @@ while 1 == 1:
                  bbox=props2)
 
 
-
     # # Check if it is time to update stats
     # right_now = gimme_minute()
     # if ref_minute != right_now:
@@ -518,7 +536,7 @@ while 1 == 1:
     plt.pause(0.02)
     plt.ioff()
     plt.show()
-
+    loop_count += 1
 
     # plt.close(fig)
 
