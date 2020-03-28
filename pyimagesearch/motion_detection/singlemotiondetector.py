@@ -9,7 +9,7 @@ class SingleMotionDetector:
 	def __init__(self, accumWeight = 0.5):  # 0.4
 		# store the accumulated weight factor
 		self.accumWeight_bg = accumWeight
-		self.accumWeight_bg_main = 0.1
+		self.accumWeight_bg_main = 0.5
 
 		# initialize the background model
 		self.bg = None
@@ -46,7 +46,7 @@ class SingleMotionDetector:
 		# average
 		cv2.accumulateWeighted(image, self.bg_main, self.accumWeight_bg_main)
 
-	def detect(self, image, tVal = 15):
+	def detect(self, image, tVal = 10):
 
 		# Add blur to avoid specles
 		image = cv2.GaussianBlur(image, (21, 21), 0)
@@ -108,7 +108,7 @@ class SingleMotionDetector:
 
 			C = []
 			C_small = []
-			thrsh = 3000
+			thrsh = 2000
 			for cnt in cnts:
 				if cv2.contourArea(cnt) > thrsh:
 					C.append(cv2.boundingRect(cnt))
@@ -161,9 +161,9 @@ class SingleMotionDetector:
 			C = None
 
 
-		smart_update =  True
+		smart_update =  False
 
-		continuous_update = False
+		continuous_update = True
 
 		# Update background if requirements are met
 		if self.sum_thresh_bg < 2000 or \
