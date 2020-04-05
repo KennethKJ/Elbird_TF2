@@ -19,6 +19,7 @@ from pyimagesearch.motion_detection import singlemotiondetector as smd
 from Tools.color_constants import gimme_color
 import pyttsx3
 
+
 import matplotlib
 matplotlib.use("TkAgg")
 
@@ -47,7 +48,7 @@ else:
     captures_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\Testing\\"
 
 dump_classified_imp_folder = "E:\\"
-stream_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\"
+stream_folder = "E:\\Electric Bird Caster\\"
 #
 # pretty_names_list = [
 #     'Crow',
@@ -138,7 +139,7 @@ def plot_IDhistory(history, pretty_names_list):
 
     # Get corresponding names
     idx2 = [i for i, x in enumerate(idx) if x]
-    names = [pretty_names_list[i,0] for i in idx2]
+    names = [pretty_names_list[i][0] for i in idx2]
     names.insert(0, "")
     names.append("")
 
@@ -166,7 +167,7 @@ ref_minute = gimme_minute()
 
 pred_history = np.zeros([1, 3, len(pretty_names_list)])
 
-IP_start = 101
+IP_start = 104
 IP = IP_start
 # Initialize IP cam
 username = "admin"
@@ -246,6 +247,8 @@ ax1 = fig.add_subplot(1, 1, 1)
 # Motion detectpr
 motion = smd.SingleMotionDetector()
 
+bird_history = np.zeros((len(pretty_names_list), 60), dtype=np.int16)
+current_birds_detected = np.zeros((len(pretty_names_list), ), dtype=np.int16)
 
 
 th = None
@@ -280,8 +283,13 @@ while 1 == 1:
     img_count = -1
     # DEBUG SETTINGS
 
-    # counter = 0  #  Preventing any NN
-
+    right_now = gimme_minute()
+    if ref_minute != right_now:
+        ref_minute = gimme_minute()
+        bird_history[:, 1:] = bird_history[:, 0:-1]
+        bird_history[:, 0] = current_birds_detected
+        current_birds_detected[:] = 0
+        plot_IDhistory(bird_history, pretty_names_list)
     # Grab next frame from camera
     ret, frame = cap.read()
 
@@ -509,6 +517,7 @@ while 1 == 1:
                         # Looping over each detected class
                         for k, c in enumerate(np.unique(classes[classes != 0])):
 
+
                             # Find windows where current class is present
                             idx = np.where(classes == c)
 
@@ -545,6 +554,10 @@ while 1 == 1:
 
                                 if len(the_situation) > 5 and cluster_prop > 70: # HIT!
 
+                                    if c == 5 and cluster_prop < 90:  # Stricter rule for blue jay due to many false alarms
+                                        continue
+
+                                    current_birds_detected[c] = 1
 
                                     # Raise the detected flag!
                                     classes_seen[c] = ID_stay_time
