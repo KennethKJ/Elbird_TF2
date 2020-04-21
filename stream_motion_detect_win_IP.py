@@ -1,3 +1,5 @@
+from plotly.graph_objs._deprecations import Data
+
 print("Running stream")
 from tensorflow.keras.models import load_model
 import numpy as np
@@ -23,6 +25,35 @@ import pyttsx3
 import matplotlib
 matplotlib.use("TkAgg")
 
+import plotly.express as px
+import chart_studio
+# import chart_studio.plotly as py
+
+import plotly.plotly as py
+from plotly.graph_objs import *
+
+#
+# gapminder = px.data.gapminder()
+# fig = px.scatter(gapminder.query("year==2007"), x="gdpPercap", y="lifeExp", size="pop", color="continent",
+#                  hover_name="country", log_x=True, size_max=60)
+# fig.show()
+#
+# username = 'KennethKJ' # your username
+# api_key = 'cTCViGj8Ia9Jvk0t5hry' # your api key - go to profile > settings > regenerate key
+# chart_studio.tools.set_credentials_file(username=username, api_key=api_key)
+#
+# py.plot(fig, filename = 'gdp_per_cap', auto_open=True)
+#
+
+
+stream_folder = "E:\\Electric Bird Caster\\"
+dump_classified_imp_folder = stream_folder
+label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+label_file.write('Neural network starting up, please wait ... ' + "\n")
+label_file.close()
+
+
+
 doNN = True
 
 # engine = pyttsx3.init()
@@ -47,8 +78,9 @@ if not develop:
 else:
     captures_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\Testing\\"
 
-dump_classified_imp_folder = "E:\\"
-stream_folder = "E:\\Electric Bird Caster\\"
+
+
+
 #
 # pretty_names_list = [
 #     'Crow',
@@ -113,7 +145,7 @@ pretty_names_list = [
     ['Tufted titmouse', ct['chartreuse4']],
     ['White breasted nuthatch', ct['chartreuse4']]]   # 27
 
-
+nuthins_seen = 0
 
 latest_labels = ['', '', '', '', '', '', '', '', '', '']
 
@@ -157,6 +189,133 @@ def plot_IDhistory(history, pretty_names_list):
     plt.close(fig)
 
 
+def plot10minStats(data):
+
+    py.sign_in('KennethKJ', 'cTCViGj8Ia9Jvk0t5hry')
+    trace1 = {
+        "type": "heatmap",
+        "x": ["2017-04-03 18:41:17.237927", "2017-04-02 18:41:17.237927", "2017-04-01 18:41:17.237927",
+              "2017-03-31 18:41:17.237927", "2017-03-30 18:41:17.237927", "2017-03-29 18:41:17.237927",
+              "2017-03-28 18:41:17.237927", "2017-03-27 18:41:17.237927", "2017-03-26 18:41:17.237927",
+              "2017-03-25 18:41:17.237927", "2017-03-24 18:41:17.237927", "2017-03-23 18:41:17.237927",
+              "2017-03-22 18:41:17.237927", "2017-03-21 18:41:17.237927", "2017-03-20 18:41:17.237927",
+              "2017-03-19 18:41:17.237927", "2017-03-18 18:41:17.237927", "2017-03-17 18:41:17.237927",
+              "2017-03-16 18:41:17.237927", "2017-03-15 18:41:17.237927", "2017-03-14 18:41:17.237927",
+              "2017-03-13 18:41:17.237927", "2017-03-12 18:41:17.237927", "2017-03-11 18:41:17.237927",
+              "2017-03-10 18:41:17.237927", "2017-03-09 18:41:17.237927", "2017-03-08 18:41:17.237927",
+              "2017-03-07 18:41:17.237927", "2017-03-06 18:41:17.237927", "2017-03-05 18:41:17.237927",
+              "2017-03-04 18:41:17.237927", "2017-03-03 18:41:17.237927", "2017-03-02 18:41:17.237927",
+              "2017-03-01 18:41:17.237927", "2017-02-28 18:41:17.237927", "2017-02-27 18:41:17.237927",
+              "2017-02-26 18:41:17.237927", "2017-02-25 18:41:17.237927", "2017-02-24 18:41:17.237927",
+              "2017-02-23 18:41:17.237927", "2017-02-22 18:41:17.237927", "2017-02-21 18:41:17.237927",
+              "2017-02-20 18:41:17.237927", "2017-02-19 18:41:17.237927", "2017-02-18 18:41:17.237927",
+              "2017-02-17 18:41:17.237927", "2017-02-16 18:41:17.237927", "2017-02-15 18:41:17.237927",
+              "2017-02-14 18:41:17.237927", "2017-02-13 18:41:17.237927", "2017-02-12 18:41:17.237927",
+              "2017-02-11 18:41:17.237927", "2017-02-10 18:41:17.237927", "2017-02-09 18:41:17.237927",
+              "2017-02-08 18:41:17.237927", "2017-02-07 18:41:17.237927", "2017-02-06 18:41:17.237927",
+              "2017-02-05 18:41:17.237927", "2017-02-04 18:41:17.237927", "2017-02-03 18:41:17.237927",
+              "2017-02-02 18:41:17.237927", "2017-02-01 18:41:17.237927", "2017-01-31 18:41:17.237927",
+              "2017-01-30 18:41:17.237927", "2017-01-29 18:41:17.237927", "2017-01-28 18:41:17.237927",
+              "2017-01-27 18:41:17.237927", "2017-01-26 18:41:17.237927", "2017-01-25 18:41:17.237927",
+              "2017-01-24 18:41:17.237927", "2017-01-23 18:41:17.237927", "2017-01-22 18:41:17.237927",
+              "2017-01-21 18:41:17.237927", "2017-01-20 18:41:17.237927", "2017-01-19 18:41:17.237927",
+              "2017-01-18 18:41:17.237927", "2017-01-17 18:41:17.237927", "2017-01-16 18:41:17.237927",
+              "2017-01-15 18:41:17.237927", "2017-01-14 18:41:17.237927", "2017-01-13 18:41:17.237927",
+              "2017-01-12 18:41:17.237927", "2017-01-11 18:41:17.237927", "2017-01-10 18:41:17.237927",
+              "2017-01-09 18:41:17.237927", "2017-01-08 18:41:17.237927", "2017-01-07 18:41:17.237927",
+              "2017-01-06 18:41:17.237927", "2017-01-05 18:41:17.237927", "2017-01-04 18:41:17.237927",
+              "2017-01-03 18:41:17.237927", "2017-01-02 18:41:17.237927", "2017-01-01 18:41:17.237927",
+              "2016-12-31 18:41:17.237927", "2016-12-30 18:41:17.237927", "2016-12-29 18:41:17.237927",
+              "2016-12-28 18:41:17.237927", "2016-12-27 18:41:17.237927", "2016-12-26 18:41:17.237927",
+              "2016-12-25 18:41:17.237927", "2016-12-24 18:41:17.237927", "2016-12-23 18:41:17.237927",
+              "2016-12-22 18:41:17.237927", "2016-12-21 18:41:17.237927", "2016-12-20 18:41:17.237927",
+              "2016-12-19 18:41:17.237927", "2016-12-18 18:41:17.237927", "2016-12-17 18:41:17.237927",
+              "2016-12-16 18:41:17.237927", "2016-12-15 18:41:17.237927", "2016-12-14 18:41:17.237927",
+              "2016-12-13 18:41:17.237927", "2016-12-12 18:41:17.237927", "2016-12-11 18:41:17.237927",
+              "2016-12-10 18:41:17.237927", "2016-12-09 18:41:17.237927", "2016-12-08 18:41:17.237927",
+              "2016-12-07 18:41:17.237927", "2016-12-06 18:41:17.237927", "2016-12-05 18:41:17.237927",
+              "2016-12-04 18:41:17.237927", "2016-12-03 18:41:17.237927", "2016-12-02 18:41:17.237927",
+              "2016-12-01 18:41:17.237927", "2016-11-30 18:41:17.237927", "2016-11-29 18:41:17.237927",
+              "2016-11-28 18:41:17.237927", "2016-11-27 18:41:17.237927", "2016-11-26 18:41:17.237927",
+              "2016-11-25 18:41:17.237927", "2016-11-24 18:41:17.237927", "2016-11-23 18:41:17.237927",
+              "2016-11-22 18:41:17.237927", "2016-11-21 18:41:17.237927", "2016-11-20 18:41:17.237927",
+              "2016-11-19 18:41:17.237927", "2016-11-18 18:41:17.237927", "2016-11-17 18:41:17.237927",
+              "2016-11-16 18:41:17.237927", "2016-11-15 18:41:17.237927", "2016-11-14 18:41:17.237927",
+              "2016-11-13 18:41:17.237927", "2016-11-12 18:41:17.237927", "2016-11-11 18:41:17.237927",
+              "2016-11-10 18:41:17.237927", "2016-11-09 18:41:17.237927", "2016-11-08 18:41:17.237927",
+              "2016-11-07 18:41:17.237927", "2016-11-06 18:41:17.237927", "2016-11-05 18:41:17.237927",
+              "2016-11-04 18:41:17.237927", "2016-11-03 18:41:17.237927", "2016-11-02 18:41:17.237927",
+              "2016-11-01 18:41:17.237927", "2016-10-31 18:41:17.237927", "2016-10-30 18:41:17.237927",
+              "2016-10-29 18:41:17.237927", "2016-10-28 18:41:17.237927", "2016-10-27 18:41:17.237927",
+              "2016-10-26 18:41:17.237927", "2016-10-25 18:41:17.237927", "2016-10-24 18:41:17.237927",
+              "2016-10-23 18:41:17.237927", "2016-10-22 18:41:17.237927", "2016-10-21 18:41:17.237927",
+              "2016-10-20 18:41:17.237927", "2016-10-19 18:41:17.237927", "2016-10-18 18:41:17.237927",
+              "2016-10-17 18:41:17.237927", "2016-10-16 18:41:17.237927", "2016-10-15 18:41:17.237927",
+              "2016-10-14 18:41:17.237927", "2016-10-13 18:41:17.237927", "2016-10-12 18:41:17.237927",
+              "2016-10-11 18:41:17.237927", "2016-10-10 18:41:17.237927", "2016-10-09 18:41:17.237927",
+              "2016-10-08 18:41:17.237927", "2016-10-07 18:41:17.237927", "2016-10-06 18:41:17.237927"],
+        "y": ["Alex", "Nicole", "Sara", "Etienne", "Chelsea", "Jody", "Marianne"],
+        "z": [
+            [2, 4, 0, 2, 3, 0, 0, 0, 3, 4, 3, 1, 2, 0, 0, 0, 1, 1, 2, 1, 0, 2, 1, 2, 2, 1, 2, 3, 2, 0, 2, 0, 2, 2, 2, 0,
+             0, 1, 2, 1, 1, 2, 1, 1, 4, 1, 1, 2, 3, 0, 1, 1, 0, 2, 1, 2, 2, 0, 3, 2, 1, 2, 3, 1, 3, 0, 1, 1, 0, 2, 0, 1,
+             1, 1, 2, 2, 1, 0, 0, 1, 0, 1, 2, 0, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 3, 0, 0, 1, 1, 2, 2, 1, 0, 1, 0, 1, 0,
+             1, 0, 1, 1, 0, 2, 0, 0, 2, 1, 2, 2, 1, 1, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 0, 1, 0, 0, 0, 4, 0, 1, 2, 3, 1,
+             1, 0, 1, 1, 1, 0, 2, 1, 2, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 3, 1, 0, 0, 0, 3, 1, 1, 0, 2, 0, 1,
+             0],
+            [1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 2, 2, 1, 1, 1, 1, 2, 0, 1, 0, 1, 0, 2, 1, 1, 0, 2, 0, 1, 3, 0, 0, 2, 2, 0, 0,
+             1, 1, 0, 2, 0, 0, 2, 3, 0, 0, 2, 1, 1, 2, 1, 0, 0, 4, 1, 0, 3, 1, 0, 1, 2, 2, 3, 3, 1, 0, 0, 0, 0, 1, 0, 1,
+             2, 2, 0, 1, 0, 1, 2, 1, 2, 2, 2, 0, 1, 1, 0, 2, 1, 4, 3, 1, 2, 2, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 2, 0, 3, 2,
+             1, 1, 1, 3, 0, 1, 0, 1, 0, 1, 1, 1, 0, 2, 0, 2, 1, 4, 0, 0, 0, 1, 0, 1, 2, 1, 1, 2, 1, 1, 0, 3, 1, 2, 1, 3,
+             3, 0, 1, 2, 1, 0, 3, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 3, 0, 1, 1, 1, 0, 0, 2, 0, 0, 0, 2, 1, 2, 0,
+             0],
+            [1, 1, 1, 1, 2, 0, 1, 2, 1, 2, 0, 0, 1, 0, 1, 1, 0, 4, 1, 1, 1, 2, 0, 0, 1, 2, 1, 1, 1, 0, 0, 0, 2, 1, 1, 0,
+             0, 2, 3, 0, 3, 0, 0, 2, 2, 0, 0, 0, 0, 2, 0, 1, 0, 2, 1, 2, 2, 0, 1, 0, 1, 0, 2, 2, 0, 1, 2, 0, 1, 1, 0, 0,
+             1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 3, 2, 1, 1, 1, 1, 1, 3, 0, 0, 1, 0, 2, 0, 1, 3, 1, 1, 1, 0, 3, 0, 0, 2, 2,
+             0, 1, 1, 2, 1, 0, 1, 2, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 2, 2, 0, 1, 1, 1, 0, 1, 1, 1, 3, 0,
+             0, 0, 1, 0, 2, 4, 1, 0, 0, 0, 0, 3, 0, 2, 0, 0, 1, 1, 0, 2, 0, 1, 1, 4, 4, 2, 2, 1, 2, 3, 0, 1, 2, 2, 1,
+             1],
+            [1, 2, 0, 2, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 2, 0, 0, 2, 0, 0, 1, 2, 1, 0, 2, 2, 2, 2, 0, 2, 1,
+             0, 0, 1, 2, 2, 1, 1, 1, 1, 0, 0, 2, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 2, 1, 1, 2, 0, 1, 1, 1, 2, 1, 0, 0, 1, 0,
+             1, 1, 0, 0, 3, 1, 0, 2, 5, 0, 1, 0, 1, 0, 2, 0, 0, 1, 0, 1, 1, 1, 2, 1, 0, 1, 0, 1, 0, 1, 0, 2, 1, 0, 0, 1,
+             3, 0, 1, 0, 2, 0, 0, 1, 1, 2, 2, 0, 0, 0, 0, 0, 1, 1, 0, 2, 3, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 2,
+             2, 0, 1, 2, 0, 0, 2, 3, 1, 2, 1, 2, 0, 0, 1, 2, 2, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 1, 1, 1, 0, 1, 0, 1,
+             1],
+            [3, 1, 1, 1, 1, 2, 1, 0, 0, 0, 2, 1, 1, 1, 1, 1, 0, 0, 1, 4, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1,
+             1, 2, 0, 0, 0, 1, 0, 1, 2, 1, 1, 0, 1, 0, 0, 3, 1, 2, 4, 0, 0, 1, 1, 0, 0, 1, 2, 1, 4, 2, 1, 0, 1, 0, 2, 1,
+             2, 0, 0, 0, 0, 0, 1, 0, 3, 2, 0, 0, 0, 1, 0, 4, 0, 0, 2, 0, 1, 1, 0, 3, 0, 2, 4, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+             2, 2, 1, 0, 0, 3, 1, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 3, 1, 2, 1, 3, 1, 2, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 1, 0, 3, 2, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0,
+             2],
+            [2, 1, 1, 1, 2, 0, 1, 2, 1, 1, 4, 2, 3, 2, 0, 1, 2, 1, 0, 0, 2, 0, 0, 1, 1, 0, 2, 0, 1, 2, 0, 3, 0, 1, 1, 0,
+             1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 2, 2, 1, 4, 0, 2, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 0, 1, 0, 0,
+             2, 0, 1, 0, 3, 1, 0, 0, 0, 1, 1, 1, 3, 1, 1, 2, 1, 0, 4, 0, 0, 2, 0, 0, 2, 0, 2, 0, 2, 6, 0, 0, 0, 2, 0, 2,
+             1, 4, 1, 0, 1, 0, 1, 3, 2, 2, 1, 0, 1, 2, 3, 2, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 1,
+             0, 1, 4, 0, 2, 0, 1, 1, 1, 1, 1, 2, 2, 0, 0, 1, 2, 2, 1, 2, 2, 1, 1, 1, 0, 1, 1, 1, 1, 2, 0, 0, 2, 2, 3,
+             0],
+            [0, 2, 1, 3, 0, 0, 2, 0, 2, 2, 2, 1, 6, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 2, 1, 0, 3, 2, 2, 1, 0, 1, 1, 1, 3, 0,
+             2, 0, 1, 1, 2, 3, 2, 1, 0, 1, 0, 0, 0, 1, 2, 1, 2, 1, 1, 0, 1, 0, 0, 0, 2, 3, 1, 2, 0, 2, 1, 0, 1, 0, 2, 0,
+             1, 0, 1, 0, 1, 2, 3, 3, 1, 1, 1, 0, 2, 1, 1, 1, 1, 2, 1, 0, 3, 0, 1, 3, 1, 5, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1,
+             1, 2, 2, 1, 3, 2, 1, 3, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 2, 2, 0, 4, 2, 0, 1, 1, 1, 0, 2, 0, 0, 1, 1, 1, 0, 2,
+             1, 2, 0, 2, 0, 0, 1, 0, 2, 1, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 0, 0, 1, 0, 4, 1, 0, 1, ]],
+            "colorscale": "Viridis"
+    }
+    data = Data([trace1])
+    layout = {
+        "title": "GitHub commits per day",
+        "xaxis": {
+            "ticks": "",
+            "nticks": 36
+        },
+        "yaxis": {"ticks": ""}
+    }
+    fig = Figure(data=data, layout=layout)
+    plot_url = py.plot(fig)
+
+
+
+
+
+
 def gimme_minute():
     the_time = str(datetime.datetime.now())
     return the_time[14:16]
@@ -167,7 +326,7 @@ ref_minute = gimme_minute()
 
 pred_history = np.zeros([1, 3, len(pretty_names_list)])
 
-IP_start = 104
+IP_start = 103
 IP = IP_start
 # Initialize IP cam
 username = "admin"
@@ -278,60 +437,72 @@ plot_labels = None
 numClassifications = np.zeros((len(pretty_names_list),))
 currentCertainty = np.zeros((len(pretty_names_list),))
 
+frame_rate = 10
+
 while 1 == 1:
 
     img_count = -1
     # DEBUG SETTINGS
 
-    right_now = gimme_minute()
-    if ref_minute != right_now:
-        ref_minute = gimme_minute()
-        bird_history[:, 1:] = bird_history[:, 0:-1]
-        bird_history[:, 0] = current_birds_detected
-        current_birds_detected[:] = 0
-        plot_IDhistory(bird_history, pretty_names_list)
-    # Grab next frame from camera
-    ret, frame = cap.read()
+
+
+    waiting_for_key_frame = True
+    frame_count = 0
+    none_Count = 0
+    while waiting_for_key_frame:
+        # Grab next frame from camera
+        ret, frame = cap.read()
+        if frame is None:
+            none_Count += 1
+
+        else:
+            frame_count += 1
+
+        time.sleep(1/frame_rate)  #
+
+        if frame_count == frame_rate or none_Count > 50:
+            waiting_for_key_frame = False
+
 
     if frame is None:
         IP = IP_start-1
         while frame is None:
             print('Frame was None')
             cap.release()
-
-            ax1.clear()
-
-            ax1.set_xlim(0, w_frame)
-            ax1.set_ylim(h_frame, 0)
-
-            props_tech_issue = dict(boxstyle='round', facecolor='white', alpha=1)
-
-            ax1.text(50,
-                     50,
-                     "Sorry. Technical issue!",
-                     fontsize=16,
-                     verticalalignment='top',
-                     bbox=props_tech_issue)
-
-            ax1.text(50,
-                     150,
-                     "Was not able to capture new image",
-                     fontsize=16,
-                     verticalalignment='top',
-                     bbox=props_tech_issue)
-
-
-            ax1.text(50,
-                     250,
-                     "Trying again in 10 seconds ...",
-                     fontsize=16,
-                     verticalalignment='top',
-                     bbox=props_tech_issue)
-
-            plt.draw()
-            plt.pause(0.02)
-            plt.ioff()
-            plt.show()
+            #
+            # ax1.clear()
+            #
+            # ax1.set_xlim(0, w_frame)
+            # ax1.set_ylim(h_frame, 0)
+            #
+            # props_tech_issue = dict(boxstyle='round', facecolor='white', alpha=1)
+            #
+            # ax1.text(50,
+            #          50,
+            #          "Sorry. Technical issue!",
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props_tech_issue)
+            #
+            # ax1.text(50,
+            #          150,
+            #          "Was not able to capture new image",
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props_tech_issue)
+            #
+            #
+            # ax1.text(50,
+            #          250,
+            #          "Trying again in 10 seconds ...",
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props_tech_issue)
+            #
+            # plt.draw()
+            # plt.pause(0.02)
+            # plt.ioff()
+            # plt.show()
 
             print('Trying again in 10 secs ...')
             time.sleep(10)
@@ -344,17 +515,17 @@ while 1 == 1:
                  ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
 
             print('Retrying with IP = ' + str(IP))
-            ax1.text(50,
-                     350,
-                     'Retrying with IP = ' + str(IP),
-                     fontsize=16,
-                     verticalalignment='top',
-                     bbox=props_tech_issue)
-
-            plt.draw()
-            plt.pause(0.02)
-            plt.ioff()
-            plt.show()
+            # ax1.text(50,
+            #          350,
+            #          'Retrying with IP = ' + str(IP),
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props_tech_issue)
+            #
+            # plt.draw()
+            # plt.pause(0.02)
+            # plt.ioff()
+            # plt.show()
 
             cap = cv2.VideoCapture(ss)
             ret, frame = cap.read()
@@ -377,10 +548,10 @@ while 1 == 1:
         continue
 
 
-
-    # Clear axis and add current frame
-    ax1.clear()
-    ax1.imshow(frame.astype(int))
+    #
+    # # Clear axis and add current frame
+    # ax1.clear()
+    # ax1.imshow(frame.astype(int))
 
     if 1 == 1:
 
@@ -554,7 +725,7 @@ while 1 == 1:
 
                                 if len(the_situation) > 5 and cluster_prop > 70: # HIT!
 
-                                    if c == 5 and cluster_prop < 90:  # Stricter rule for blue jay due to many false alarms
+                                    if c == 5 and cluster_prop < 90 or c == 18 and cluster_prop < 90:  # Stricter rule for blue jay due to many false alarms
                                         continue
 
                                     current_birds_detected[c] = 1
@@ -602,18 +773,18 @@ while 1 == 1:
                 #          bbox=props)
 
 
-    cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
     # if th is not None:
     #     ax1.imshow(th, alpha=0.3)
-    doPlotBoundingBoxes = False
-    if plot_objects is not None and doPlotBoundingBoxes:
-        for rc, txt_info in plot_objects:
+    # doPlotBoundingBoxes = False
+    # if plot_objects is not None and doPlotBoundingBoxes:
+        # for rc, txt_info in plot_objects:
 
-            ax1.add_patch(rc)
+            # ax1.add_patch(rc)
 
-            x_min, y_min, txt = txt_info
+            # x_min, y_min, txt = txt_info
             # ax1.text(x_min,
             #          y_min,
             #          txt,
@@ -621,160 +792,208 @@ while 1 == 1:
             #          verticalalignment='top',
             #          bbox=props)
 
-            print(txt + '(' + str(datetime.datetime.now()) + ')')
-            print('____________________________________________________')
-
-    doPlotLabels = False
-    if plot_labels is not None and doPlotLabels:
-        for pl in plot_labels:
-            x, y, txt, col = pl
-
-            props2 = dict(boxstyle='round', facecolor=col, alpha=0.5)
-
-            ax1.text(x, y,
-                     txt,
-                     fontsize=14,
-                     verticalalignment='top',
-                     bbox=props2)
+            # print(txt + '(' + str(datetime.datetime.now()) + ')')
+            # print('____________________________________________________')
 
 
-    # if motion.updated:
-    props2 = dict(boxstyle='round', facecolor='white', alpha=1)
+    doLabels = True
 
-    ax1.text(10,
-             1100,
-             "Frame #: " + str(loop_count),
-             fontsize=16,
-             verticalalignment='top',
-             bbox=props2)
+    if doLabels:
 
-    ax1.text(400,
-             1100,
-             "# imgs: " + str(img_count),
-             fontsize=16,
-             verticalalignment='top',
-             bbox=props2)
-
-    system_msg = "Status: " + "Num restarts = " + str(restart_no) + '; IP=' + str(IP)
-    ax1.text(800,
-             1100,
-             system_msg,
-             fontsize=16,
-             verticalalignment='top',
-             bbox=props2)
+        if np.sum(classes_seen) > 0:
 
 
+            label_file = open(dump_classified_imp_folder + "label.txt", "w+")
 
-    # if plot_objects == []:
-    #     msg = 'I see nothing!'
-    # else:
-    #     msg = ''
-        
-    # ax1.text(50,
-    #          50,
-    #          "Message from NN: " + msg,
-    #          fontsize=16,
-    #          verticalalignment='top',
-    #          bbox=props2)
+            for i, c in enumerate(classes_seen):
 
-    props3 = dict(boxstyle='round', facecolor='white', alpha=0.8)
-    props4 = dict(boxstyle='round', facecolor='green', alpha=1)
+                if classes_seen[i] > 0:
+                    classes_seen[i] -= 1
 
-    y = 25
-    subtractor = 0
-    x_pos = 10
-    y_step = 50
-    for i, c in enumerate(classes_seen):
+                if i == 3 or i == 22 or i == 23 or i == 24 or i == 26 or i == 27:
+                    continue
 
-        if i == 0 or i == 3 or i == 18 or i == 22 or i == 23 or i == 24 or i == 26:
+                txt = pretty_names_list[i][0]
 
-            subtractor += 1
-            continue
+                # t = str(datetime.datetime.now())
+                # t = t[10:19]
+                if c:
+                    label_file.write(txt + "\n")
+                    nuthins_seen = 0
 
-        total_classifications = int(numClassifications[i])
-        txt = pretty_names_list[i][0]
+            label_file.close()
 
-        ax1.text(x_pos,
-                 y + y_step * (i - subtractor),
-                 txt,
-                 fontsize=12,
-                 color='black',
-                 verticalalignment='center',
-                 bbox=props3)
+        elif nuthins_seen == 0:
+            label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+            label_file.write('< --- >' + "\n")
+            label_file.close()
 
-        if c:
-            props4['alpha'] = c/ID_stay_time
+            nuthins_seen = 1
+
+
+    else:
+
+
+        doPlotLabels = False
+        if plot_labels is not None and doPlotLabels:
+            for pl in plot_labels:
+                x, y, txt, col = pl
+
+                props2 = dict(boxstyle='round', facecolor=col, alpha=0.5)
+
+                ax1.text(x, y,
+                         txt,
+                         fontsize=14,
+                         verticalalignment='top',
+                         bbox=props2)
+
+
+        # if motion.updated:
+        props2 = dict(boxstyle='round', facecolor='white', alpha=1)
+
+        ax1.text(10,
+                 1100,
+                 "Frame #: " + str(loop_count),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        ax1.text(400,
+                 1100,
+                 "# imgs: " + str(img_count),
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+        system_msg = "Status: " + "Num restarts = " + str(restart_no) + '; IP=' + str(IP)
+        ax1.text(800,
+                 1100,
+                 system_msg,
+                 fontsize=16,
+                 verticalalignment='top',
+                 bbox=props2)
+
+
+
+        # if plot_objects == []:
+        #     msg = 'I see nothing!'
+        # else:
+        #     msg = ''
+
+        # ax1.text(50,
+        #          50,
+        #          "Message from NN: " + msg,
+        #          fontsize=16,
+        #          verticalalignment='top',
+        #          bbox=props2)
+
+        props3 = dict(boxstyle='round', facecolor='white', alpha=0.8)
+        props4 = dict(boxstyle='round', facecolor='green', alpha=1)
+
+        y = 25
+        subtractor = 0
+        x_pos = 10
+        y_step = 50
+        for i, c in enumerate(classes_seen):
+
+            if i == 0 or i == 3 or i == 22 or i == 23 or i == 24 or i == 26:
+
+                subtractor += 1
+                continue
+
+            total_classifications = int(numClassifications[i])
+            txt = pretty_names_list[i][0]
 
             ax1.text(x_pos,
-                     y + y_step*(i-subtractor),
+                     y + y_step * (i - subtractor),
                      txt,
                      fontsize=12,
                      color='black',
                      verticalalignment='center',
-                     bbox=props4)
-            classes_seen[i] -= 1
+                     bbox=props3)
+
+            if c:
+                props4['alpha'] = c/ID_stay_time
+
+                ax1.text(x_pos,
+                         y + y_step*(i-subtractor),
+                         txt,
+                         fontsize=12,
+                         color='black',
+                         verticalalignment='center',
+                         bbox=props4)
+                classes_seen[i] -= 1
 
 
 
 
 
 
-        # ax1.text(300,
-        #          1000,
-        #          "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
-        #          fontsize=16,
-        #          verticalalignment='top',
-        #          bbox=props2)
+            # ax1.text(300,
+            #          1000,
+            #          "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props2)
+            #
+            # ax1.text(600,
+            #          1000,
+            #          "Thresh sum: " + str(int(motion.sum_thresh_bg)),
+            #          fontsize=16,
+            #          verticalalignment='top',
+            #          bbox=props2)
+
+        # else:
+        #     props2 = dict(boxstyle='round', facecolor='red', alpha=0.5)
         #
-        # ax1.text(600,
-        #          1000,
-        #          "Thresh sum: " + str(int(motion.sum_thresh_bg)),
-        #          fontsize=16,
-        #          verticalalignment='top',
-        #          bbox=props2)
+        #     ax1.text(10,
+        #              10,
+        #              "Frame #: " + str(loop_count),
+        #              fontsize=16,
+        #              verticalalignment='top',
+        #              bbox=props2)
+        #
+        #     ax1.text(10,
+        #              100,
+        #              "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
+        #              fontsize=16,
+        #              verticalalignment='top',
+        #              bbox=props2)
+        #
+        #     ax1.text(10,
+        #              200,
+        #              "Thresh sum: " + str(int(motion.sum_thresh_bg)),
+        #              fontsize=16,
+        #              verticalalignment='top',
+        #              bbox=props2)
+        #
 
-    # else:
-    #     props2 = dict(boxstyle='round', facecolor='red', alpha=0.5)
-    #
-    #     ax1.text(10,
-    #              10,
-    #              "Frame #: " + str(loop_count),
-    #              fontsize=16,
-    #              verticalalignment='top',
-    #              bbox=props2)
-    #
-    #     ax1.text(10,
-    #              100,
-    #              "Thres sum main :" + str(int(motion.sum_thresh_bg_main)),
-    #              fontsize=16,
-    #              verticalalignment='top',
-    #              bbox=props2)
-    #
-    #     ax1.text(10,
-    #              200,
-    #              "Thresh sum: " + str(int(motion.sum_thresh_bg)),
-    #              fontsize=16,
-    #              verticalalignment='top',
-    #              bbox=props2)
-    #
+        # # Check if it is time to update stats
+        # right_now = gimme_minute()
+        # if ref_minute != right_now:
+        #     ref_minute = gimme_minute()
+        #     bird_history[:, 1:] = bird_history[:, 0:-1]
+        #     bird_history[:, 0] = np.squeeze(current_bird_count)
+        #     current_bird_count = np.zeros([len(top_10), 1])
+        #
+        #     # Update figure
+        #     plot_IDhistory(bird_history, pretty_names_list)
 
-    # # Check if it is time to update stats
-    # right_now = gimme_minute()
-    # if ref_minute != right_now:
-    #     ref_minute = gimme_minute()
-    #     bird_history[:, 1:] = bird_history[:, 0:-1]
-    #     bird_history[:, 0] = np.squeeze(current_bird_count)
-    #     current_bird_count = np.zeros([len(top_10), 1])
-    #
-    #     # Update figure
-    #     plot_IDhistory(bird_history, pretty_names_list)
+        plt.draw()
+        plt.pause(0.02)
+        plt.ioff()
+        plt.show()
 
-    plt.draw()
-    plt.pause(0.02)
-    plt.ioff()
-    plt.show()
+
     loop_count += 1
 
+    right_now = gimme_minute()
+    if ref_minute != right_now:
+        ref_minute = gimme_minute()
+        bird_history[:, 1:] = bird_history[:, 0:-1]
+        bird_history[:, 0] = current_birds_detected
+        current_birds_detected[:] = 0
+        plot_IDhistory(bird_history, pretty_names_list)
     # plt.close(fig)
 
     # time.sleep(0.5)  #
