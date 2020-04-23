@@ -1,68 +1,49 @@
-from plotly.graph_objs._deprecations import Data
-
-print("Running stream")
 from tensorflow.keras.models import load_model
 import numpy as np
-# from tensorflow.keras.applications.inception_v3 import preprocess_input
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from matplotlib import pyplot as plt
-import os
-from tensorflow.keras.preprocessing import image
 import time
-import shutil
 import datetime
-import seaborn as sns
 import pandas as pd
 import cv2
-import matplotlib.patches as patches
 from scipy.spatial import distance
-from itertools import compress
 from pyimagesearch.motion_detection import singlemotiondetector as smd
-from Tools.color_constants import gimme_color
-import pyttsx3
 
+print("Running Electric Birder")
 
-import matplotlib
-matplotlib.use("TkAgg")
+## Settings
 
-import plotly.express as px
-import chart_studio
-import chart_studio.plotly as py
+# Misc
+doNN = True
+doAVI = False
+minimum_prob = 50
+ID_stay_time = 5  # Cycles before a positive ID has faded away in the species ID panel
+num_cycles_in_history = 3  # Number of cycles in history
+max_dist = 7  # max allowed distance when looking for classification clusters of same species
 
-# import plotly.plotly as py
-# from chart_studio.graph_objs import *
-
-#
-# gapminder = px.data.gapminder()
-# fig = px.scatter(gapminder.query("year==2007"), x="gdpPercap", y="lifeExp", size="pop", color="continent",
-#                  hover_name="country", log_x=True, size_max=60)
-# fig.show()
-#
-# username = 'KennethKJ' # your username
-# api_key = 'cTCViGj8Ia9Jvk0t5hry' # your api key - go to profile > settings > regenerate key
-# chart_studio.tools.set_credentials_file(username=username, api_key=api_key)
-#
-# py.plot(fig, filename = 'gdp_per_cap', auto_open=True)
-#
-
-
+# Folders
 stream_folder = "E:\\Electric Bird Caster\\"
-dump_classified_imp_folder = stream_folder
-label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+image_capture_folder = stream_folder + "Captured Images\\"
+
+# IP Camera parameters
+IP_start = 101
+IP = IP_start
+username = "admin"
+password = "JuLian50210809"
+IP_address = "192.168.10." + str(IP_start)
+rtsp_port = "554"
+channel = "1"
+subtype = "0"
+
+# Image windowing parameters
+win_size = (int(224*2), int(224*2))
+target_img_size = (224, 224)
+step_size = (int(win_size[0]/3), int(win_size[1]/3))
+
+# Load model
+print('Neural network starting up, please wait ... ' + "\n")
+label_file = open(stream_folder + "label.txt", "w+")
 label_file.write('Neural network starting up, please wait ... ' + "\n")
 label_file.close()
-print('Neural network starting up, please wait ... ' + "\n")
-
-
-image_capture_folder = "E:\\Electric Bird Caster\\Captured Images\\"
-
-doNN = True
-
-speech_engine = pyttsx3.init()
-speech_engine.say("Initializing bird thinga-mo-jigger")
-speech_engine.runAndWait()
-
-
 if doNN:
     print("Loading model ... ")
     model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
@@ -71,152 +52,40 @@ else:
     print("Skipping model ...")
     model = None
 
-print("Initializing variables")
 
-develop = True
-
-if not develop:
-    captures_folder = "C:\\Users\\alert\\AppData\\Roaming\\iSpy\\WebServerRoot\\Media\\Video\\UOOWS\\grabs\\"
-else:
-    captures_folder = "C:\\Users\\alert\\Google Drive\\ML\\Electric Bird Caster\\Testing\\"
-
-
-
-
-#
-# pretty_names_list = [
-#     'Crow',
-#     'Goldfinch breeding M',
-#     'Goldfinch off duty M or F',
-#     'No bird detected',  # 3
-#     'Black capped chickadee',
-#     'Blue jay',
-#     'Brown headed cowbird F',
-#     'brown headed cowbird M',
-#     'Carolina wren',
-#     'Common Grakle',
-#     'Downy woodpecker',  # 10
-#     'Eatern Bluebird',
-#     'Eu starling on-duty Ad',
-#     'Eu starling off-duty Ad',
-#     'House finch M',
-#     'House finch F',  # 15
-#     'House sparrow F/Im',
-#     'House sparrow M',
-#     'Mourning dove',
-#     'Cardinal M',
-#     'Cardinal F',  # 20
-#     'Norhtern flicker (red)',
-#     'Pileated woodpecker',
-#     'Red winged blackbird F/Im',
-#     'Red winged blackbird M',
-#     'Squirrel!',  # 25
-#     'Tufted titmouse',
-#     'White breasted nuthatch']  # 27
-
-ct = gimme_color()
 
 
 pretty_names_list = [
-    ['Crow', ct['black']],
-    ['Goldfinch breeding M', ct['gold1']],
-    ['Goldfinch (F; non-breeding M)', ct['gold4']],
-    ['No bird detected', ct['black']],  # 3
-    ['Black-capped chickadee', ct['gray69']],
-    ['Blue jay', ct['peacock']],
-    ['Brown headed cowbird (F)', ct['chocolate4']],
-    ['Brown headed cowbird (M)', ct['chartreuse4']],
-    ['Carolina wren', ct['chartreuse4']],
-    ['Common Grakle', ct['chartreuse4']],
-    ['Downy woodpecker', ct['chartreuse4']],   # 10
-    ['Eastern Bluebird', ct['chartreuse4']],
-    ['Eu starling', ct['chartreuse4']],
-    ['Eu starling off-duty Ad', ct['chartreuse4']],
-    ['House finch (M)', ct['chartreuse4']],
-    ['House finch (F)',  ct['chartreuse4']],  # 15
-    ['House sparrow (F/Im)', ct['chartreuse4']],
-    ['House sparrow (M)', ct['chartreuse4']],
-    ['Mourning dove', ct['chartreuse4']],
-    ['Cardinal (M)', ct['chartreuse4']],
-    ['Cardinal (F)', ct['chartreuse4']],   # 20
-    ['Northern flicker (red)', ct['chartreuse4']],
-    ['Pileated woodpecker', ct['chartreuse4']],
-    ['Red winged blackbird (F/Im)', ct['chartreuse4']],
-    ['Red winged blackbird (M)', ct['chartreuse4']],
-    ['Squirrel :( ', ct['chartreuse4']],   # 25
-    ['Tufted titmouse', ct['chartreuse4']],
-    ['White breasted nuthatch', ct['chartreuse4']]]   # 27
+    'Crow',
+    'Goldfinch (breeding M)',
+    'Goldfinch (non-breeding M or F)',
+    'No bird detected',  # 3
+    'Black-capped chickadee',
+    'Blue jay',
+    'Brown headed cowbird (F)',
+    'brown headed cowbird (M)',
+    'Carolina wren',
+    'Common grakle',
+    'Downy woodpecker',  # 10
+    'Eastern bluebird',
+    'Eu starling',
+    'Eu starling off-duty Ad',
+    'House finch (M)',
+    'House finch (F)',  # 15
+    'House sparrow (F/Im)',
+    'House sparrow (M)',
+    'Mourning dove',
+    'Cardinal (M)',
+    'Cardinal (F)',  # 20
+    'Northern flicker',
+    'Pileated woodpecker',
+    'Red winged blackbird (F/Im)',
+    'Red winged blackbird (M)',
+    'Squirrel :o',  # 25
+    'Tufted titmouse',
+    'White-breasted nuthatch']  # 27
 
-nuthins_seen = 0
-
-latest_labels = ['', '', '', '', '', '', '', '', '', '']
-
-detection_threshold = 50
-restart_no = 0
-
-def plot_IDhistory(history, pretty_names_list):
-    # ax.clear()
-
-    fig, ax = plt.subplots(figsize=(18.5, 5.5))
-    # idx = np.repeat(False, 28)
-    # for i in range(len(history[:, 1, 1])):
-    #     # Find all non zero entries
-    idx = np.argmax(history, axis=1) > 0
-    #     for j in range(len(idx)):
-    #         idx[j] = idx[j] or idx_tmp[j]
-    if idx.all() == False:
-        idx[3] = True  # set the "No birds one to True so at least one is there
-
-    # Process history matrix accordingly
-    h = history[idx, :]
-    a = np.zeros((1, len(history[1, :])))
-    h = np.concatenate((a, h, a), axis=0)
-
-    # Get corresponding names
-    idx2 = [i for i, x in enumerate(idx) if x]
-    names = [pretty_names_list[i][0] for i in idx2]
-    names.insert(0, "")
-    names.append("")
-
-    sns.heatmap(h.astype(np.int),
-                ax=ax,
-                annot=True, fmt="d",
-                linewidths=.5,
-                yticklabels=names,
-                cbar=False)
-
-    plt.title("Birds visiting the last hour")
-    plt.xlabel("Minutes past now")
-    plt.savefig(stream_folder + "classification_graph.png")
-    # plt.show()
-    plt.close(fig)
-
-
-def gimme_minute():
-    the_time = str(datetime.datetime.now())
-    return the_time[14:16]
-
-
-
-ref_minute = gimme_minute()
-
-# plot_IDhistory(bird_history, pretty_names_list)
-
-pred_history = np.zeros([1, 3, len(pretty_names_list)])
-
-IP_start = 101
-IP = IP_start
-# Initialize IP cam
-username = "admin"
-password = "JuLian50210809"
-IP_address = "192.168.10." + str(IP_start)
-rtsp_port = "554"
-channel = "1"
-subtype = "0"
-# ss = "rtsp://admin:JuLian50210809@" + IP_address + ":554/cam/realmonitor?channel=1&subtype=00authbasic=YWRtaW46SnVMaWFuNTAyMTA4MDk="
-
-
-doAVI = False
+print("Initializing camera")
 if doAVI:
     # ss = "E:\Electric Bird Caster\Videos\Test1.avi"
     # ss = "E:\Electric Bird Caster\Videos\Testy.avi"
@@ -229,92 +98,41 @@ else:
          ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
     cap = cv2.VideoCapture(ss)
 
-
-frame_no = 150
-property = cv2.CAP_PROP_POS_FRAMES
-cap.set(property, frame_no)
-
-
 print("Video source: " + ss)
 
+print("reading frame ... ")
 ret, frame = cap.read()
 if frame is None:
     print('Not able to grab images from IP cam!')
     pass
+print("Camera initialized")
 
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+# Initialize motion detector
+motion = smd.SingleMotionDetector()
+motion.update_bg(frame_bw)
+motion.update_bg_main(frame_bw)
+
+# Get image size and calc windowing related parameters
 h_frame, w_frame, _ = frame.shape  # img_pil = img_pil.resize((int(w/3), int(h/3)))
-
 raw_image_shape = (h_frame, w_frame)  #  (height, width)
-
-
-# win_size = (int(h/6), int(h/6))
-win_size = (int(224*2), int(224*2))
-
-target_img_size = (224, 224)
-
-step_size = (int(win_size[0]/3), int(win_size[1]/3))
-
 num_steps = (int(np.floor((raw_image_shape[0]/step_size[0]) - 1)),
              int(np.floor((raw_image_shape[1]/step_size[1]) - 1)))
 
-
-frame_centers = np.zeros((2, num_steps[0], num_steps[1])).astype(int)
-
-
-for i in range(num_steps[0]):
-    for j in range(num_steps[1]):
-        frame_centers[0, i, j] = int(i * step_size[0] + win_size[0] / 2)
-        frame_centers[1, i, j] = int(j * step_size[1] + win_size[1] / 2)
-
-
-num_images = num_steps[0] * num_steps[1]
-
-pred_history_2D = np.zeros((0, num_steps[0], num_steps[1]))
-bird_idx_history_2D = np.zeros((0, num_steps[0], num_steps[1])).astype(np.int)
+# Initialize vars related to classification
+pred_probs_2D_history = np.zeros((0, num_steps[0], num_steps[1]))
+bird_classes_2D_history = np.zeros((0, num_steps[0], num_steps[1])).astype(np.int)
 
 the_situation_idx = np.zeros((num_steps[0], num_steps[1])).astype(np.int)
 the_situation_prob = np.zeros((num_steps[0], num_steps[1]))
 
-# Plot snippet
-fig = plt.figure(figsize=(18, 8))
-ax1 = fig.add_subplot(1, 1, 1)
+# Below var is set to ID_stay_time when a positive ID is made and then "fades" with 1 per cycle.
+# Works as a "low pass filter" to make the displaying of labels less flimsy
+birds_seen_lately = np.zeros(len(pretty_names_list), )
 
-
-# Motion detectpr
-motion = smd.SingleMotionDetector()
-
-bird_history = np.zeros((len(pretty_names_list), 60), dtype=np.int16)
-current_birds_detected = np.zeros((len(pretty_names_list), ), dtype=np.int16)
-
-
-th = None
-
-frames_btw_obj_detect = 1
-counter = 0
-
-# Initializations
-ret, frame = cap.read()
-frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-motion.update_bg(frame_bw)
-motion.update_bg_main(frame_bw)
-colly = "rgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymcrgbwymc"
-
-colly_rgb = []
-
-loop_count = 0
-ID_stay_time = 5  # Seconds before a positive ID has faded away in the species ID panel
-classes_seen = np.zeros(len(pretty_names_list),)
-system_msg = "xxx"
-plot_objects = None
-plot_labels = None
-
-numClassifications = np.zeros((len(pretty_names_list),))
-currentCertainty = np.zeros((len(pretty_names_list),))
-
-frame_rate = 6
-
+# Initialize data frame
 df = pd.DataFrame(columns=['year',
                            'month',
                            'day',
@@ -329,85 +147,90 @@ df = pd.DataFrame(columns=['year',
                            'vert_location',
                            'image_filename'])
 
-print("Starting loop")
+# Initializing loop variables
 current_hour = datetime.datetime.now().hour
 last_loop_count = -1
+nuthins_seen = 0
+restart_no = 0
+loop_count = 0
+frame_rate = 6
+
+print("Starting loop")
 while 1 == 1:
 
-# TODO monitor loop time and only delay frame grabbing is less than 1 sec has passed (since we classify 1/second)
+    # Update t for next loop
+    t = datetime.datetime.now()
 
-
-    # print("Reading frames")
-
+    # Reset loop variables
     img_count = -1
-    # DEBUG SETTINGS
+    model_pred_time = 0
 
-    waiting_for_key_frame = True
-    frame_count = 0
-    none_Count = 0
-    # print("Reading frames")
+    # Skip over old frames
+    grab_delay = 0
+    num_frames = 0
+    while grab_delay < 0.1:
+        T = datetime.datetime.now()
+        ret = cap.grab()
+        dT = datetime.datetime.now() - T
+        grab_delay = dT.total_seconds()
+        # print(delay_grab)
+        num_frames += 1
+        if num_frames > 500:
+            grab_delay = 1
+            print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + T.strftime())
 
-    while waiting_for_key_frame:
-        # Grab next frame from camera
-        ret, frame = cap.read()
-        if frame is None:
-            none_Count += 1
-            print(str(none_Count) + " frame(s) are None ")
-
-        else:
-            frame_count += 1
-            # print("Frame " + str(frame_count))
-
-        time.sleep(1/(2*frame_rate))  #
-
-        if frame_count == frame_rate or none_Count > 10:
-            waiting_for_key_frame = False
-            # print("Done")
-
-
+    # Then get most recent frame
+    ret, frame = cap.read()
+    num_frames += 1
 
     # Retry connecting to capture device if frame was none
     if frame is None:
+
+        print('Frame was None ' + str(datetime.datetime.now()))
+
         wait_time = 3
         IP = IP_start - 1
         while frame is None:
 
-            label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+            # Let go of capture object
+            cap.release()
+
+            # Inform
+            label_file = open(stream_folder + "label.txt", "w+")
             label_file.write('< Camera connection issues > \n < Retrying to connect in ' + str(wait_time) + ' seconds >')
             label_file.close()
 
-            print('Frame was None')
-            cap.release()
-
-            print('Trying again in 10 secs ...')
+            print('Trying again in ' + str(wait_time) + ' secs ...')
             time.sleep(wait_time)
 
+            # Increase last 3 IP numbers
             IP += 1
             if IP > 105:
                 IP = int(100)
+
+            # Generate new string
             IP_address = "192.168.10." + str(IP)
             ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
                  ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
 
+            # Inform
             print('Retrying with IP = ' + str(IP))
-            label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+            label_file = open(stream_folder + "label.txt", "w+")
             label_file.write('< Retrying camera connection with IP = ' + str(IP) + ' >')
             label_file.close()
 
+            # Try again
             cap = cv2.VideoCapture(ss)
             ret, frame = cap.read()
 
-            counter = 0
         else:
             restart_no += 1
-            label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+
+            # Inform
+            label_file = open(stream_folder + "label.txt", "w+")
             label_file.write('< Connection re-established >')
             label_file.close()
-
-    # Increase frame number  up
-    counter += 1
-    # counter = 1
-    # print("Change frame color format")
+            print('Connection re-established ' + str(datetime.datetime.now()))
 
     try:
         # Change color format
@@ -418,352 +241,251 @@ while 1 == 1:
         time.sleep(10)
         continue
 
+    ## Motion detection
+    # Convert to black and white
+    frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-    #
-    # # Clear axis and add current frame
-    # ax1.clear()
-    # ax1.imshow(frame.astype(int))
+    # Detect motion
+    # mt = datetime.datetime.now()
+    X = motion.detect(frame_bw)
+    # dmt = datetime.datetime.now() - mt
+    # print("Motion detection time: " + str(dmt.total_seconds()))
+
+    if X is not None:  # Motion is detected
 
-    if 1 == 1:
-        # print("Run movement detection")
+        # Unpack group of bounding boxes
+        _, bounding_boxes = X
 
-        # Motion detection
-        frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        X = motion.detect(frame_bw)
-        if X is not None:
-            # print("Movement detected")
-            th, bounding_boxes = X
 
-            # for bb in bounding_boxes:
-            #     x, y, w, h = bb
-            #     rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor='r', facecolor='none')
-            #     ax1.add_patch(rect)
+        if bounding_boxes != [] and doNN:
 
-            # plot_objects = None
-            # plot_labels = None
+            # Initialize image container
+            all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
 
-            # If the set # of frames has past, do object detection
-            if bounding_boxes != [] and doNN:
-                # Reset counter
+            # Initialize movement indicator grid
+            grid = np.zeros((num_steps[0], num_steps[1])).astype(np.bool)
 
-                # print("Moving object large enough, cycling through bounding boxes")
+            for bb in bounding_boxes:
 
-                # all_image_snippets = np.zeros((num_images, target_img_size[0], target_img_size[1], 3))
-                max_percent_movement = 0
-                active_windows = []
-                bb_centers = []
-                all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
+                # Unpack the single bounding box
+                x, y, w, h = bb
 
+                # Calculate x & y positions on grid ("pixels to idx")
+                # x
+                low_x = np.floor(x / step_size[1]).astype(np.int)
+                high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
+                # y
+                low_y = np.floor(y / step_size[0]).astype(np.int)
+                high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
 
-                bb_count = 0
-                grid = np.zeros((num_steps[0], num_steps[1])).astype(np.bool)
+                # Set grid values overlapping with bounding box to true
+                grid[low_y: high_y, low_x: high_x] = True
 
-                for bb in bounding_boxes:
+            # Grab images where bounding boxes moving object
+            img_count = 0  # reset image count
+            x_s = []  # list of x values included in grid (s is for selected)
+            y_s = []  # list of y values included in grid
+            for i in range(num_steps[0]):
+                for j in range(num_steps[1]):
+                    if grid[i, j]:
+                        x_s.append(j)
+                        y_s.append(i)
 
-                    x, y, w, h = bb
+                        # Grab window from the frame
+                        img_snippet = frame[i*step_size[0]: i*step_size[0] + win_size[0],  # height
+                                            j*step_size[1]: j*step_size[1] + win_size[1],  # width
+                                            :]  # channels
 
-                    low_x = np.floor(x / step_size[1]).astype(np.int)
-                    high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
+                        # Resize to NN image size requirement
+                        # TODO this needs to be done only once with all images
+                        if img_snippet.shape[0:2] != target_img_size:
+                            img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
 
-                    low_y = np.floor(y / step_size[0]).astype(np.int)
-                    high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
+                        # Stack onto collection of images to run NN on
+                        all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
 
-                    grid[low_y: high_y, low_x: high_x] = True
+                        # Increase image count
+                        img_count += 1
 
-                    mid_x_v = x + np.int(w/2)
-                    mid_y_h = y + np.int(h/2)
+            if all_image_snippets.shape[0] != 0:  # Images are present (aren't they always at this stage?)
 
-                    bb_centers.append((mid_y_h, mid_x_v))
+                # Preprocess images according to model requirement
+                all_image_snippets = preprocess_input(all_image_snippets)
 
-                    # circ = patches.Circle((mid_x_v, mid_y_h), radius=30, linewidth=1, edgecolor='w', facecolor='none')
-                    # ax1.add_patch(circ)
+                # Run (and time) model predictions
+                mt = datetime.datetime.now()
+                pred = model.predict(all_image_snippets)
+                dmt = datetime.datetime.now() - mt
+                model_pred_time=dmt.total_seconds()
 
-                    bb_count += 1
-                    # rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor='c', facecolor='none')
-                    # ax1.add_patch(rect)
+                # Get index of classified birds/animals
+                bird_classes = np.argmax(pred, axis=1)
 
-                if counter >= frames_btw_obj_detect:
-                    # print("Grabbing images")
+                # Translate class identifications into a matrix ("2D")
+                bird_classes_2D = np.zeros(num_steps).astype(np.int)  # reset
+                bird_classes_2D[y_s, x_s] = bird_classes
 
-                    counter = 0
-                    img_count = 0
+                # Get rid of background detections
+                bird_classes_2D[bird_classes_2D == 3] = 0
 
-                    x_s = []
-                    y_s = []
-                    for i in range(num_steps[0]):
-                        for j in range(num_steps[1]):
-                            if grid[i, j]:
-                                x_s.append(j)
-                                y_s.append(i)
+                # Get maxima of props and convert to %
+                pred_probs = np.max(pred, axis=1)*100
+                # Translate probabilities into a matrix ("2D")
+                pred_probs_2D = np.zeros(num_steps).astype(np.int)  # reset
+                pred_probs_2D[y_s, x_s] = pred_probs
 
-                                # Grab window from the frame
-                                img_snippet = frame[i*step_size[0]: i*step_size[0] + win_size[0],  # height
-                                                    j*step_size[1]: j*step_size[1] + win_size[1],  # width
-                                                    :]  # channels
+                # Get rid of background detections
+                pred_probs_2D[bird_classes_2D == 0] = 0
 
-                                # Resize to NN image size requirement
-                                if img_snippet.shape[0:2] != target_img_size:
-                                    img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
+                # Get index of all elements that are larger than minimum prob threshold
+                idx2 = pred_probs_2D < minimum_prob
+                # Zero out classifications and probs not meeting criteria
+                pred_probs_2D[idx2] = 0
+                bird_classes_2D[idx2] = 0
 
-                                # Stack onto collection of images to run NN on
-                                all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
-                                img_count += 1
+                # Purge to only keep set number of cycles in history
+                if len(pred_probs_2D_history[:, 1, 1]) == num_cycles_in_history:
+                    pred_probs_2D_history = np.delete(pred_probs_2D_history, 0, 0)
+                    bird_classes_2D_history = np.delete(bird_classes_2D_history, 0, 0)
 
+                # Add detected classes to history
+                bird_classes_2D_history = np.concatenate((bird_classes_2D_history, np.expand_dims(bird_classes_2D, axis=0)))
 
-                if all_image_snippets.shape[0] != 0:
-                    # Pre process all image snippets
-                    # print('Preprocessing images ...')
+                # Add prediction probabilities to history
+                pred_probs_2D_history = np.concatenate((pred_probs_2D_history, np.expand_dims(pred_probs_2D, axis=0)))
 
-                    # print("Pre processing images")
+                # Continue only if the full depth of the history is filled
+                if len(pred_probs_2D_history[:, 1, 1]) >= num_cycles_in_history:
+
+                    # Looping over detected classes
+                    for k, c in enumerate(np.unique(bird_classes_2D_history[bird_classes_2D_history != 0])):
+
+                        # Find the windows where the current class is present
+                        idx = np.where(bird_classes_2D_history == c)
+
+                        # Convert idx variable to a list of tuple (y, x) coordinates for use below (idx is two arrays of [y] and [x]'s)
+                        coords = []
+                        for j in range(len(idx[0])):
+                            coords.append((idx[0][j], idx[1][j], idx[2][j]))
 
-                    all_image_snippets = preprocess_input(all_image_snippets)
+                        #  Make a list of the clusters of the current class that are the specified distance apart (i.e. j == True)_
+                        cluster_list = []
+                        run_through = 0
+                        while coords:
 
-                    # Run model predictions
-                    # print('Running model ...')
-                    # print("Running model")
+                            # Calculate the euclidian distance between windows with current class ID'ed
+                            dist = distance.cdist(coords, coords, 'euclidean')
 
-                    pred = model.predict(all_image_snippets)
-                    # print('Done')
+                            # Test which ones are less that the specified distance apart
+                            d = np.logical_and(dist <= (run_through + 1) * max_dist, dist >= run_through*max_dist)
 
-                    ## BIRD IDX
+                            # Append found cluster of close enough coords to cluster list
+                            cluster_list.append([coords[i] for i, j in enumerate(d[0]) if j == True])
 
-                    # Get index of classified birds/animals
-                    bird_idx = np.argmax(pred, axis=1)
+                            # Remove found cluster of coords from coords
+                            coords = [coords[i] for i, j in enumerate(d[0]) if j == False]
 
-                    bird_idx_2d = np.zeros(num_steps).astype(np.int)
-                    bird_idx_2d[y_s, x_s] = bird_idx
+                        # For each cluster of the current class, calculate a "bounding box" and make a rect object
+                        for C in cluster_list:
 
-                    # Get rid of background detections
-                    bird_idx_2d[bird_idx_2d == 3] = 0
+                            # Convert current cluster to a numpy array
+                            C_array = np.array(C)
 
-                    pred_max = np.max(pred, axis=1)*100
+                            # Use array to make a list of probabilities associated with the current cluster
+                            the_situation = [pred_probs_2D_history[xyz[0], xyz[1], xyz[2]] for xyz in C_array]
 
-                    pred_max_2D = np.zeros(num_steps).astype(np.int)
-                    pred_max_2D[y_s, x_s] = pred_max
+                            # Calculate the mean probability of all predictions within the cluster
+                            cluster_prop = np.mean(the_situation).astype(np.int)
 
-                    # Get rid of background detections
-                    pred_max_2D[bird_idx_2d == 0] = 0
+                            # Test if criteria is met for a "real" detection
+                            if len(the_situation) > 5 and cluster_prop > 70: # HIT! (more than 5 detections and over 70% mean certainty)
 
-                    # # Get index of all elements that are larger than threshold
-                    idx2 = pred_max_2D < detection_threshold
-                    pred_max_2D[idx2] = 0
-                    bird_idx_2d[idx2] = 0
+                                # Apply higher restrictions on troublesome classes
+                                if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c==27) and cluster_prop < 90:  # Stricter rule for blue jay and others due to many false alarms
+                                    continue
 
-                    depth = 3
-                    if len(pred_history_2D[:, 1, 1]) == depth:  # Keep only last 10
-                        pred_history_2D = np.delete(pred_history_2D, 0, 0)
-                        bird_idx_history_2D = np.delete(bird_idx_history_2D, 0, 0)
+                                # recategorizing of "off duty" Starlings
+                                if c == 13:
+                                    c = 12
 
-                    bird_idx_history_2D = np.concatenate((bird_idx_history_2D, np.expand_dims(bird_idx_2d, axis=0)))
-                    pred_history_2D = np.concatenate((pred_history_2D, np.expand_dims(pred_max_2D, axis=0)))
+                                # Raise the detected flag!
+                                birds_seen_lately[c] = ID_stay_time
 
-                    # Continue if the full depth of the history is filled
-                    if len(pred_history_2D[:, 1, 1]) >= depth:
-                        classes = bird_idx_history_2D
-                        plot_objects = []
-                        plot_labels = []
-                        y_plot_level = 20
+                                # Calculate position of detected birdie
+                                x_min = step_size[1] * np.min(C_array[:, 2])
+                                x_max = step_size[1] * np.max(C_array[:, 2]) + win_size[1]
+                                y_min = step_size[0] * np.min(C_array[:, 1])
+                                y_max = step_size[0] * np.max(C_array[:, 1]) + win_size[0]
 
-                        # classes_seen = np.zeros(len(pretty_names_list), )
+                                w = x_max - x_min  # - int(win_size[1]/2)
+                                h = y_max - y_min  # - int(win_size[0]/2)
 
-                        # Looping over each detected class
-                        # print("Looping over detected classes")
+                                x_mid = int(x_min + w/2)
+                                y_mid = int(y_min + h/2)
 
-                        for k, c in enumerate(np.unique(classes[classes != 0])):
+                                # Save frame to image file (if this is a new frame/loop)
+                                if loop_count != last_loop_count:
 
+                                    # Generate filename for saving image
+                                    filename = str(datetime.datetime.today().year) + '_' + \
+                                               str(datetime.datetime.today().month) + '_' +  \
+                                               str(datetime.datetime.today().day) + '_' +  \
+                                               str(datetime.datetime.now().hour) + '_' +  \
+                                               str(datetime.datetime.now().minute) + '_' +  \
+                                               str(datetime.datetime.now().second) + '_' +  \
+                                               str(datetime.datetime.now().microsecond) + '_' +  \
+                                               'loop_' + str(loop_count) + \
+                                               '.jpg'
 
-                            # Find windows where current class is present
-                            idx = np.where(classes == c)
+                                    # Save frame to image
+                                    cv2.imwrite(image_capture_folder + filename, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-                            # Convert idx variable to a list of tuple (y, x) coordinates (idx is two arrays of [y] and [x]'s)
-                            coords = []
-                            for j in range(len(idx[0])):
-                                coords.append((idx[0][j], idx[1][j], idx[2][j]))
+                                # Save loop count
+                                last_loop_count = loop_count
 
-                            #  Then make a list of the clusters of the current class that are the specified distance apart (i.e. j == True)_
-                            cluster_list = []
-                            max_dist = 7
-                            run_through = 0
-                            while coords:
-                                # Calculate the euclidian distance between windows with current class ID'ed
-                                #   and test which ones are less that the specified distance apart
-                                dist = distance.cdist(coords, coords, 'euclidean')
+                                # Assemble dict of data for dataframe
+                                data_dict = {'year': datetime.datetime.today().year,
+                                             'month': datetime.datetime.today().month,
+                                             'day': datetime.datetime.today().day,
+                                             'hour': datetime.datetime.now().hour,
+                                             'minute': datetime.datetime.now().minute,
+                                             'second': datetime.datetime.now().second,
+                                             'birdID': c,
+                                             'bird_name': pretty_names_list[c][0],
+                                             'classification_probability': cluster_prop,
+                                             'loop_cycle': loop_count,
+                                             'horz_location': x_mid,
+                                             'vert_location': y_mid,
+                                             'image_filename': filename}
 
-                                d = np.logical_and(dist <= (run_through + 1) * max_dist, dist >= run_through*max_dist)
-                                # cluster_list.append([coords[i] for i, j in enumerate(d[current_d_idx]) if j == True])
-                                cluster_list.append([coords[i] for i, j in enumerate(d[0]) if j == True])
-                                coords = [coords[i] for i, j in enumerate(d[0]) if j == False]
+                                # Append data to dataframe
+                                df = df.append(data_dict, ignore_index=True)
 
+    # Write labels to file for OBS
+    if np.sum(birds_seen_lately) > 0:
 
-                            # For each cluster of the current class, calculate a "bounding box" and make a rect object
-                            for C in cluster_list:
+        label_file = open(stream_folder + "label.txt", "w+")
 
-                                C_array = np.array(C)
+        for i, c in enumerate(birds_seen_lately):
 
-                                # if any(C_array[:, 0] == depth-1):
-                                #     break
+            # Subtract one to "forget" some over each cycle
+            if birds_seen_lately[i] > 0:
+                birds_seen_lately[i] -= 1
 
-                                the_situation = [pred_history_2D[xyz[0], xyz[1], xyz[2]] for xyz in C_array]
-                                cluster_prop = np.mean(the_situation).astype(np.int)
-
-                                if len(the_situation) > 5 and cluster_prop > 70: # HIT!
-                                    # print("HIT")
-
-                                    if (c == 5 or c == 18 or c == 22 or c == 26) and cluster_prop < 90:  # Stricter rule for blue jay and others due to many false alarms
-                                        # print("... but ignored")
-
-                                        continue
-
-                                    # recategorizing "off duty" Starlings
-                                    if c == 13:
-                                        c = 12
-
-                                    current_birds_detected[c] = 1
-
-                                    # Raise the detected flag!
-                                    classes_seen[c] = ID_stay_time
-
-
-                                    currentCertainty[c] = cluster_prop
-
-                                    numClassifications[c] += 1
-
-
-                                    # pred_max_2D
-
-                                    max_situation_idx = np.argmax(the_situation)
-
-                                    # x_min = step_size[1] * np.min(C_array[max_situation_idx][2])
-                                    # x_max = x_min + win_size[1]
-                                    # y_min = step_size[0] * np.min(C_array[max_situation_idx][1])
-                                    # y_max = y_min + win_size[0]
-
-                                    x_min = step_size[1] * np.min(C_array[:, 2])
-                                    x_max = step_size[1] * np.max(C_array[:, 2]) + win_size[1]
-                                    y_min = step_size[0] * np.min(C_array[:, 1])
-                                    y_max = step_size[0] * np.max(C_array[:, 1]) + win_size[0]
-
-                                    w = x_max - x_min  # - int(win_size[1]/2)
-                                    h = y_max - y_min  # - int(win_size[0]/2)
-
-                                    x_mid = int(x_min + w/2)
-                                    y_mid = int(y_min + h/2)
-                                    # rect = patches.Rectangle((x_min, y_min), w, h, linewidth=1.5, edgecolor=colly[c],
-                                    #                          facecolor='none')
-                                    #
-                                    # class_text = pretty_names_list[c][0] + ' (' + str(cluster_prop) + '%)'
-                                    # plot_objects.append((rect, (x_min, y_min-45, class_text)))
-
-
-
-                                    # Save frame to image file
-                                    if loop_count != last_loop_count:
-                                        # print("Make filename")
-
-                                        # Generate filename for saving image
-                                        filename = str(datetime.datetime.today().year) + '_' + \
-                                                   str(datetime.datetime.today().month) + '_' +  \
-                                                   str(datetime.datetime.today().day) + '_' +  \
-                                                   str(datetime.datetime.now().hour) + '_' +  \
-                                                   str(datetime.datetime.now().minute) + '_' +  \
-                                                   str(datetime.datetime.now().second) + '_' +  \
-                                                   str(datetime.datetime.now().microsecond) + '_' +  \
-                                                   'loop_' + str(loop_count) + \
-                                                   '.jpg'
-
-                                        # Save frame to image
-                                        cv2.imwrite(image_capture_folder + filename, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
-                                    last_loop_count = loop_count
-
-                                    # Assemble dict of data for dataframe
-                                    data_dict = {'year': datetime.datetime.today().year,
-                                                 'month': datetime.datetime.today().month,
-                                                 'day': datetime.datetime.today().day,
-                                                 'hour': datetime.datetime.now().hour,
-                                                 'minute': datetime.datetime.now().minute,
-                                                 'second': datetime.datetime.now().second,
-                                                 'birdID': c,
-                                                 'bird_name': pretty_names_list[c][0],
-                                                 'classification_probability': cluster_prop,
-                                                 'loop_cycle': loop_count,
-                                                 'horz_location': x_mid,
-                                                 'vert_location': y_mid,
-                                                 'image_filename': filename}
-
-                                    # Append data to dataframe
-                                    df = df.append(data_dict, ignore_index=True)
-
-
-
-                                    # plot_labels.append((10, y_plot_level, class_text, 'white'))
-                                    # y_plot_level += 50
-                # ax1.text(x_min,
-                #          y_min,
-                #          txt,
-                #          fontsize=14,
-                #          verticalalignment='top',
-                #          bbox=props)
-
-
-    # cols = "rgbrgbrgbrgbrgbrgbrgbrgb"
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-
-    # if th is not None:
-    #     ax1.imshow(th, alpha=0.3)
-    # doPlotBoundingBoxes = False
-    # if plot_objects is not None and doPlotBoundingBoxes:
-        # for rc, txt_info in plot_objects:
-
-            # ax1.add_patch(rc)
-
-            # x_min, y_min, txt = txt_info
-            # ax1.text(x_min,
-            #          y_min,
-            #          txt,
-            #          fontsize=14,
-            #          verticalalignment='top',
-            #          bbox=props)
-
-            # print(txt + '(' + str(datetime.datetime.now()) + ')')
-            # print('____________________________________________________')
-
-
-
-
-    if np.sum(classes_seen) > 0:
-        # print("Label stuff")
-
-        label_file = open(dump_classified_imp_folder + "label.txt", "w+")
-
-        for i, c in enumerate(classes_seen):
-
-            if classes_seen[i] > 0:
-                classes_seen[i] -= 1
-
-            if i == 3 or i == 23 or i == 24 or i == 27:
-                txt = 'Hmm, not sure ... (ID= ' + str(i) + '; ' + str(currentCertainty[i]) + ')'
-            else:
-                txt = pretty_names_list[i][0]
-
-            # t = str(datetime.datetime.now())
-            # t = t[10:19]
+            # Add too labels if active
             if c:
-                label_file.write(txt + "\n")
+                label_file.write(pretty_names_list[i] + "\n")
                 nuthins_seen = 0
 
         label_file.close()
 
-    elif nuthins_seen == 0:
+    elif nuthins_seen == 0:  # When no detections has been made
 
-        label_file = open(dump_classified_imp_folder + "label.txt", "w+")
+        label_file = open(stream_folder + "label.txt", "w+")
         label_file.write('< --- >' + "\n")
         label_file.close()
 
-        nuthins_seen = 1
-
-
-
+        nuthins_seen = 1  # This switch is to ensure to write this ti label file only once if a strech of nothing is going on at the feeder
 
     # Save dataframe to csv every 5 minutes
     if loop_count % 300 == 0:
@@ -775,7 +497,7 @@ while 1 == 1:
 
         df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
 
-    # Save dataframe and create a new if a new hour of the day has started
+    # Save data frame and create a new if a new hour of the day has started
     if current_hour != datetime.datetime.now().hour:
 
         df_filename = str(datetime.datetime.today().year) + '_' + \
@@ -783,8 +505,10 @@ while 1 == 1:
                       str(datetime.datetime.today().day) + '_' + \
                       str(current_hour) + '.csv'
 
+        # Save current data frame to CSV file
         df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
 
+        # Create new and empty data frame for next hour
         df = pd.DataFrame(columns=['year',
                                    'month',
                                    'day',
@@ -799,23 +523,25 @@ while 1 == 1:
                                    'vert_location',
                                    'image_filename'])
 
+        # Update current hour
         current_hour = datetime.datetime.today().hour
 
+    ## Update debug info
+    debug_txt = ""  # Reset debug info text
+    debug_txt = debug_txt + "LOOP no. " + str(loop_count) + "\n"
+    debug_txt = debug_txt + "Num frames run through: " + str(num_frames) + "\n"
+    debug_txt = debug_txt + "Total images for model: " + str(img_count) + "\n"
+    debug_txt = debug_txt + "Model prediction time: " + str(model_pred_time) + "\n"
 
-    right_now = gimme_minute()
-    if ref_minute != right_now:
-        # print("Getting minute")
+    # Get loop delay
+    dt = datetime.datetime.now() - t
+    delay = dt.total_seconds()
+    # print("Loop time = " + str(delay))
+    debug_txt = debug_txt + "Loop time = " + str(delay) + "\n"
 
-        ref_minute = gimme_minute()
-        bird_history[:, 1:] = bird_history[:, 0:-1]
-        bird_history[:, 0] = current_birds_detected
-        current_birds_detected[:] = 0
-        plot_IDhistory(bird_history, pretty_names_list)
+    debug_file = open(stream_folder + "debug_info.txt", "w+")
+    debug_file.write(debug_txt)
+    debug_file.close()
 
-    # plt.draw()
-    # plt.pause(0.02)
-    # plt.ioff()
-    # plt.show()
-    # print("Loop end!")
-
+    # Inc loop count
     loop_count += 1
