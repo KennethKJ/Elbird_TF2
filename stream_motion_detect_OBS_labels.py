@@ -42,7 +42,7 @@ step_size = (int(win_size[0]/3), int(win_size[1]/3))
 # Load model
 print('Neural network starting up, please wait ... ' + "\n")
 label_file = open(stream_folder + "label.txt", "w+")
-label_file.write('Neural network starting up, please wait ... ' + "\n")
+label_file.write('Neural network (slowly) starting up, please wait ... :| ' + "\n")
 label_file.close()
 if doNN:
     print("Loading model ... ")
@@ -62,8 +62,8 @@ pretty_names_list = [
     'No bird detected',  # 3
     'Black-capped chickadee',
     'Blue jay',
-    'Brown headed cowbird (F)',
-    'brown headed cowbird (M)',
+    'Brown-headed cowbird (F)',
+    'Brown-headed cowbird (M)',
     'Carolina wren',
     'Common grakle',
     'Downy woodpecker',  # 10
@@ -81,7 +81,7 @@ pretty_names_list = [
     'Pileated woodpecker',
     'Red winged blackbird (F/Im)',
     'Red winged blackbird (M)',
-    'Squirrel :o',  # 25
+    'Squirrel >:o',  # 25
     'Tufted titmouse',
     'White-breasted nuthatch']  # 27
 
@@ -177,7 +177,7 @@ while 1 == 1:
         num_frames += 1
         if num_frames > 500:
             grab_delay = 1
-            print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + T.strftime())
+            print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + str(T))
 
     # Then get most recent frame
     ret, frame = cap.read()
