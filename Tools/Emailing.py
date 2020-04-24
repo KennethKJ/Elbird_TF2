@@ -1,41 +1,66 @@
 import smtplib
-import time
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-# Email Variables
-SMTP_SERVER = 'smtp.gmail.com'  # Email Server (don't change!)
-SMTP_PORT = 587  # Server Port (don't change!)
-GMAIL_USERNAME = 'electric.birder@gmail.com'  # change this to match your gmail account
-GMAIL_PASSWORD = 'JuLian50210809'  # change this to match your gmail password
+
+port = 587
+smtp_server = "smtp.gmail.com"
+login = "electric.birder@gmail.com"  # paste your login
+password = "JuLian50210809"  # paste your password
+sender_email = "electric.birder@gmail.com"
+
 
 class Emailer:
 
-    def sendmail(self, recipient, subject, content):
-        # Create Headers
-        headers = ["From: " + GMAIL_USERNAME, "Subject: " + subject, "To: " + recipient,
-                   "MIME-Version: 1.0", "Content-Type: text/html"]
-        headers = "\r\n".join(headers)
+    def sendmail(self, recipient, subject, body, filename=None):
 
-        # Connect to Gmail Server
-        session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        session.ehlo()
-        session.starttls()
-        session.ehlo()
+        message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = recipient
+        message["Subject"] = subject
+        # Add body
+        message.attach(MIMEText(body, "plain"))
 
-        # Login to Gmail
-        session.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+        # Add attachment if provided
+        if filename is not None:
+            with open(filename, "rb") as attachment:
+                # The content type "application/octet-stream" means that a MIME attachment is a binary file
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
 
-        # Send Email & Exit
-        session.sendmail(GMAIL_USERNAME, recipient, headers + "\r\n\r\n" + content)
-        session.quit
+                # Encode to base64
+                encoders.encode_base64(part)
+
+                # Add header
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename= {filename}",
+                )
+
+                # Add attachment to your message and convert it to string
+                message.attach(part)
+
+        text = message.as_string()
+
+        # send your email
+        with smtplib.SMTP(smtp_server, port) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(login, password)
+            server.sendmail(
+                sender_email, recipient, text
+            )
 
 
-sender = Emailer()
-
-sendTo = 'kkj@jensenkk.net'
-emailSubject = "Pileated Woodpecker Seen!"
-emailContent = "Pileated Woodpecker seen at " + time.ctime()
-sender.sendmail(sendTo, emailSubject, emailContent)
-
-print("Email Sent")
-
-
+# TESTING
+# sender = Emailer()
+# import time
+# sendTo = 'kkj@jensenkk.net'
+# emailSubject = "Pileated Woodpecker Seen!"
+# emailContent = "Pileated Woodpecker seen at " + time.ctime()
+# sender.sendmail(sendTo, emailSubject, emailContent)
+#
+# print("Email Sent")
