@@ -17,17 +17,19 @@ print("Running Electric Birder")
 # Misc
 doNN = True
 doAVI = False
-minimum_prob = 50
-ID_stay_time = 5  # Cycles before a positive ID has faded away in the species ID panel
+minimum_prob = 55  # The minimum probability for selection
+main_prob_criteria = 70  # Main criteria for a final classsification (mean of num_classifications)
+num_classifications = 5  # number of images across space and time classified within current cluster
+ID_stay_time = 7  # Cycles before a positive ID has faded away in the species ID panel
 num_cycles_in_history = 3  # Number of cycles in history
-max_dist = 7  # max allowed distance when looking for classification clusters of same species
+max_dist = 5  # max allowed distance when looking for classification clusters of same species
 
 # Folders
 stream_folder = "E:\\Electric Bird Caster\\"
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
-IP_start = 101
+IP_start = 100
 IP = IP_start
 username = "admin"
 password = "JuLian50210809"
@@ -39,13 +41,23 @@ subtype = "0"
 # Image windowing parameters
 win_size = (int(224*2), int(224*2))
 target_img_size = (224, 224)
-step_size = (int(win_size[0]/3), int(win_size[1]/3))
+num_image_steps = (4, 12)  # (int(win_size[0]/2), int(win_size[1]/2))
+
 
 # Load model
 print('Neural network starting up, please wait ... ' + "\n")
 label_file = open(stream_folder + "label.txt", "w+")
-label_file.write('Neural network (slowly) starting up, please wait ... :| ' + "\n")
+label_file.write('Restarting, this takes several minutes, please wait ... :| ' + "\n")
 label_file.close()
+
+debug_file = open(stream_folder + "debug_info.txt", "w+")
+debug_file.write(str(datetime.datetime.now()) + '\n')
+debug_file.write('The neural network is starting up \n')
+# debug_file.write('This takes a minute or two' + "\n")
+debug_file.write('Please wait ... ' + "\n")
+debug_file.close()
+
+
 if doNN:
     print("Loading model ... ")
     model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
@@ -53,9 +65,6 @@ if doNN:
 else:
     print("Skipping model ...")
     model = None
-
-
-
 
 pretty_names_list = [
     'Crow',
@@ -109,6 +118,8 @@ if frame is None:
     pass
 print("Camera initialized")
 
+frame_rate = cap.get(cv2.CAP_PROP_FPS)
+print("Frame rate = " + str(frame_rate))
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -118,17 +129,17 @@ motion.update_bg(frame_bw)
 motion.update_bg_main(frame_bw)
 
 # Get image size and calc windowing related parameters
-h_frame, w_frame, _ = frame.shape  # img_pil = img_pil.resize((int(w/3), int(h/3)))
-raw_image_shape = (h_frame, w_frame)  #  (height, width)
-num_steps = (int(np.floor((raw_image_shape[0]/step_size[0]) - 1)),
-             int(np.floor((raw_image_shape[1]/step_size[1]) - 1)))
+frame_height, frame_width, _ = frame.shape  # img_pil = img_pil.resize((int(w/3), int(h/3)))
+step_size = (int(np.floor(frame_height / num_image_steps[0])), int(np.floor(frame_width / num_image_steps[1])))
+raw_image_shape = (frame_height, frame_width)  #  (height, width)
+
+print("Image overlap vertical = " + str(np.round(100-(step_size[0] / win_size[0]) * 100).astype(np.int)) + "%")
+print("Image overlap horizontal = " + str(np.round(100-(step_size[1] / win_size[1]) * 100).astype(np.int)) + "%")
+print("Max images = " + str(num_image_steps[0]*num_image_steps[1]))
 
 # Initialize vars related to classification
-pred_probs_2D_history = np.zeros((0, num_steps[0], num_steps[1]))
-bird_classes_2D_history = np.zeros((0, num_steps[0], num_steps[1])).astype(np.int)
-
-# the_situation_idx = np.zeros((num_steps[0], num_steps[1])).astype(np.int)
-# the_situation_prob = np.zeros((num_steps[0], num_steps[1]))
+pred_probs_2D_history = np.zeros((0, num_image_steps[0], num_image_steps[1]))
+bird_classes_2D_history = np.zeros((0, num_image_steps[0], num_image_steps[1])).astype(np.int)
 
 # Below var is set to ID_stay_time when a positive ID is made and then "fades" with 1 per cycle.
 # Works as a "low pass filter" to make the displaying of labels less flimsy
@@ -162,13 +173,12 @@ last_loop_count = -1
 nuthins_seen = 0
 restart_no = 0
 loop_count = 0
-frame_rate = 6
 
 print("Starting loop")
 try:
 
     while 1 == 1:
-
+        # print("Line 181")
         # Update t for next loop
         t = datetime.datetime.now()
 
@@ -193,6 +203,7 @@ try:
         # Then get most recent frame
         ret, frame = cap.read()
         num_frames += 1
+        # print("Line 206")
 
         # Retry connecting to capture device if frame was none
         if frame is None:
@@ -255,31 +266,45 @@ try:
         ## Motion detection
         # Convert to black and white
         frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        # print("Line 269")
 
         # Detect motion
         # mt = datetime.datetime.now()
         X = motion.detect(frame_bw)
         # dmt = datetime.datetime.now() - mt
         # print("Motion detection time: " + str(dmt.total_seconds()))
-
+        motion_detected = False
         if X is not None:  # Motion is detected
+            # print("Line 278")
 
             # Unpack group of bounding boxes
             _, bounding_boxes = X
 
 
             if bounding_boxes != [] and doNN:
+                # print("Line 285")
+
+                motion_detected = True
 
                 # Initialize image container
                 all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
 
                 # Initialize movement indicator grid
-                grid = np.zeros((num_steps[0], num_steps[1])).astype(np.bool)
+                grid = np.zeros((num_image_steps[0], num_image_steps[1])).astype(np.bool)
 
                 for bb in bounding_boxes:
 
                     # Unpack the single bounding box
                     x, y, w, h = bb
+
+                    # Prevent too many images will be activated
+                    if w > win_size[1]:
+                        x = x + w / 2 - win_size[1] / 2
+                        w = win_size[1]
+
+                    if h > win_size[0]:
+                        y = y + h / 2 - win_size[0] / 2
+                        w = win_size[0]
 
                     # Calculate x & y positions on grid ("pixels to idx")
                     # x
@@ -292,12 +317,14 @@ try:
                     # Set grid values overlapping with bounding box to true
                     grid[low_y: high_y, low_x: high_x] = True
 
+                # print("Line 311")
+
                 # Grab images where bounding boxes moving object
                 img_count = 0  # reset image count
                 x_s = []  # list of x values included in grid (s is for selected)
                 y_s = []  # list of y values included in grid
-                for i in range(num_steps[0]):
-                    for j in range(num_steps[1]):
+                for i in range(num_image_steps[0]):
+                    for j in range(num_image_steps[1]):
                         if grid[i, j]:
                             x_s.append(j)
                             y_s.append(i)
@@ -317,6 +344,7 @@ try:
 
                             # Increase image count
                             img_count += 1
+                # print("Line 338")
 
                 if all_image_snippets.shape[0] != 0:  # Images are present (aren't they always at this stage?)
 
@@ -324,16 +352,18 @@ try:
                     all_image_snippets = preprocess_input(all_image_snippets)
 
                     # Run (and time) model predictions
+                    # print("Running model on " + str(img_count) + " images")
                     mt = datetime.datetime.now()
                     pred = model.predict(all_image_snippets)
                     dmt = datetime.datetime.now() - mt
                     model_pred_time=dmt.total_seconds()
+                    # print("Done after " + str(model_pred_time) + " seconds")
 
                     # Get index of classified birds/animals
                     bird_classes = np.argmax(pred, axis=1)
 
                     # Translate class identifications into a matrix ("2D")
-                    bird_classes_2D = np.zeros(num_steps).astype(np.int)  # reset
+                    bird_classes_2D = np.zeros(num_image_steps).astype(np.int)  # reset
                     bird_classes_2D[y_s, x_s] = bird_classes
 
                     # Get rid of background detections
@@ -342,7 +372,7 @@ try:
                     # Get maxima of props and convert to %
                     pred_probs = np.max(pred, axis=1)*100
                     # Translate probabilities into a matrix ("2D")
-                    pred_probs_2D = np.zeros(num_steps).astype(np.int)  # reset
+                    pred_probs_2D = np.zeros(num_image_steps).astype(np.int)  # reset
                     pred_probs_2D[y_s, x_s] = pred_probs
 
                     # Get rid of background detections
@@ -367,6 +397,7 @@ try:
 
                     # Continue only if the full depth of the history is filled
                     if len(pred_probs_2D_history[:, 1, 1]) >= num_cycles_in_history:
+                        # print("Line 391")
 
                         # Looping over detected classes
                         for k, c in enumerate(np.unique(bird_classes_2D_history[bird_classes_2D_history != 0])):
@@ -409,7 +440,7 @@ try:
                                 cluster_prop = np.mean(the_situation).astype(np.int)
 
                                 # Test if criteria is met for a "real" detection
-                                if len(the_situation) > 5 and cluster_prop > 70: # HIT! (more than 5 detections and over 70% mean certainty)
+                                if len(the_situation) > num_classifications and cluster_prop > main_prob_criteria: # HIT! (more than 5 detections and over 70% mean certainty)
 
                                     # Apply higher restrictions on troublesome classes
                                     if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c==27) and cluster_prop < 90:  # Stricter rule for blue jay and others due to many false alarms
@@ -476,6 +507,8 @@ try:
                                     df = df.append(data_dict, ignore_index=True)
 
         # Write labels to file for OBS
+        # print("Line 501")
+
         if np.sum(birds_seen_lately) > 0:
 
             label_file = open(stream_folder + "label.txt", "w+")
@@ -544,6 +577,11 @@ try:
         debug_txt = ""  # Reset debug info text
         debug_txt = debug_txt + "LOOP no. " + str(loop_count) + "\n"
         debug_txt = debug_txt + "Num frames run through: " + str(num_frames) + "\n"
+        if motion_detected:
+            debug_txt = debug_txt + "MOTION DETECTED!" + "\n"
+        else:
+            debug_txt = debug_txt + "No motion" + "\n"
+
         debug_txt = debug_txt + "Total images for model: " + str(img_count) + "\n"
         debug_txt = debug_txt + "Model prediction time: " + str(model_pred_time) + "\n"
 
@@ -557,14 +595,16 @@ try:
         debug_file.write(debug_txt)
         debug_file.close()
 
+        # print("Line 589")
+
         # E-mail notification
-        bird_of_interest = 20
+        bird_of_interest = 22
         bird_of_interest_threshold = 5
         for i, c in enumerate(bird_classifications_count):
             if i == bird_of_interest and c >= bird_of_interest_threshold:
 
                 emailContent = "A pretty " + pretty_names_list[i] + " has been seen " + str(bird_classifications_count[i]) \
-                               + " times now. Most recently now at " + str(datetime.datetime.now()) + "\n" + \
+                               + " times now. Most recently now at " + str(datetime.datetime.now()) + "\n" \
                                + "See attached image :) "
                 e_mailer.sendmail("kenneth.kragh.jensen@gmail.com", "Electric Birder Alert!", emailContent, image_capture_folder + filename)
                 e_mailer.sendmail("jensenmeredithl@gmail.com", "Electric Birder Alert!", emailContent, image_capture_folder + filename)
@@ -574,9 +614,12 @@ try:
 
         # Inc loop count
         loop_count += 1
+        # print("Line 608, end of loop")
 
 except:
+    print("SHIT!!!")
+    raise
 
     e = sys.exc_info()[0]
-    emailContent = "Error = " + e
+    emailContent = "Error = " + str(e)
     e_mailer.sendmail(debug_email, "ELECTRIC BIRDER ERROR!", emailContent)
