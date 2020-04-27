@@ -6,10 +6,10 @@ import cv2
 
 class SingleMotionDetector:
 
-	def __init__(self, accumWeight = 0.5):  # 0.4
+	def __init__(self, accumWeight = 0.4):  # 0.4
 		# store the accumulated weight factor
 		self.accumWeight_bg = accumWeight
-		self.accumWeight_bg_main = 0.5
+		self.accumWeight_bg_main = 0.1
 
 		# initialize the background model
 		self.bg = None
@@ -23,6 +23,7 @@ class SingleMotionDetector:
 		self.sum_thresh_bg = 0
 		self.sum_thresh_bg_main = 0
 		self.C_previous = []
+		self.smart_update = True
 
 	def update_bg(self, image):
 
@@ -95,7 +96,7 @@ class SingleMotionDetector:
 
 			# find contours in the thresholded image and initialize the
 			# minimum and maximum bounding box regions for motion
-			if len(thresh_bg_main.shape)> 2:
+			if len(thresh_bg_main.shape) > 2:
 				thresh_bg_main_2D = np.sum(thresh_bg_main.copy(), 2).astype(np.uint8)
 			else:
 				thresh_bg_main_2D = thresh_bg_main.copy()
@@ -108,20 +109,16 @@ class SingleMotionDetector:
 
 			C = []
 			C_small = []
-			thrsh = 2000
+			thrsh = 5000
 			for cnt in cnts:
 				if cv2.contourArea(cnt) > thrsh:
 					C.append(cv2.boundingRect(cnt))
 				elif cv2.contourArea(cnt) < thrsh:
 					C_small.append(cv2.boundingRect(cnt))
 
-
-
 			if C != []:
 
-
 				# #  Check if the bounding box is stagnant (identical to a previous one)
-
 				if self.C_previous != []:
 					C_tmp = C
 					C = []
@@ -137,8 +134,6 @@ class SingleMotionDetector:
 				# Save a copy for next time
 				self.C_previous = C
 
-
-
 				# Expand boxes with margin
 				margin = 0
 				for i, c in enumerate(C):
@@ -153,57 +148,44 @@ class SingleMotionDetector:
 
 					C[i] = (x, y, w, h)
 
-
-
-
-
 		else:
 			C = None
 
-
-		smart_update =  False
-
-		continuous_update = True
-
 		# Update background if requirements are met
-		if self.sum_thresh_bg < 2000 or \
+		if self.sum_thresh_bg < 5000 or \
 			self.sum_thresh_bg_main > 500000 or \
 			self.counter <= self.initial_bg_frames or \
-			continuous_update:
+			not self.smart_update:
 
 			self.update_bg_main(image)  # update background using entire image
 			self.updated = True
 
 		else:
 
-			if smart_update:
+			idx = th1_bg_main > -1  # initialize all as true (true = update pixel in bg pic)
 
-				idx = th1_bg_main > -1  # initialize all as true (true = update pixel in bg pic)
+			# Set all in big rects as False
+			for c in C:
+				x, y, w, h = c
 
-				# Set all in big rects as False
-				for c in C:
-					x, y, w, h = c
+				idx[y: y+h, x: x+w] = False
 
-					idx[y: y+h, x: x+w] = False
+			# Set all in small rects as True
+			for c in C_small:
+				x, y, w, h = c
 
-				# Set all in small rects as True
-				for c in C_small:
-					x, y, w, h = c
+				idx[y: y+h, x: x+w] = True
 
-					idx[y: y+h, x: x+w] = True
+			# Initialize pik
+			pik = self.bg_main
 
-				# Initialize pik
-				pik = self.bg_main
+			pik[idx] = image[idx]
 
-				pik[idx] = image[idx]
-
-				self.update_bg_main(pik)
-
-
+			self.update_bg_main(pik)
 
 			self.updated = False
 
 		if C is None:
-			return None
+			return None, None
 		else:
 			return thresh_bg_main, C

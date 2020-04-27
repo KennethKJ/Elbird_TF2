@@ -9,6 +9,10 @@ import cv2
 from scipy.spatial import distance
 from pyimagesearch.motion_detection import singlemotiondetector as smd
 from Tools.Emailing import Emailer
+from matplotlib import pyplot as plt
+import matplotlib.patches as patches
+import matplotlib
+matplotlib.use("TkAgg")
 
 print("Running Electric Birder")
 
@@ -17,6 +21,8 @@ print("Running Electric Birder")
 # Misc
 doNN = True
 doAVI = False
+plot_mode_on = True
+
 minimum_prob = 55  # The minimum probability for selection
 main_prob_criteria = 70  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
@@ -29,7 +35,7 @@ stream_folder = "E:\\Electric Bird Caster\\"
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
-IP_start = 100
+IP_start = 101
 IP = IP_start
 username = "admin"
 password = "JuLian50210809"
@@ -39,9 +45,9 @@ channel = "1"
 subtype = "0"
 
 # Image windowing parameters
-win_size = (int(224*2), int(224*2))
+win_size = (int(224*3), int(224*3))
 target_img_size = (224, 224)
-num_image_steps = (4, 12)  # (int(win_size[0]/2), int(win_size[1]/2))
+num_image_steps = (3, 8)  # (int(win_size[0]/2), int(win_size[1]/2))
 
 
 # Load model
@@ -167,6 +173,11 @@ df = pd.DataFrame(columns=['year',
 e_mailer = Emailer()
 debug_email = 'kenneth.kragh.jensen@gmail.com'
 
+# Initialize figure
+if plot_mode_on:
+    fig = plt.figure(figsize=(18, 8))
+    ax1 = fig.add_subplot(1, 1, 1)
+
 # Initializing loop variables
 current_hour = datetime.datetime.now().hour
 last_loop_count = -1
@@ -263,6 +274,11 @@ try:
             time.sleep(10)
             continue
 
+        # Clear axis and add current frame
+        if plot_mode_on:
+            ax1.clear()
+            ax1.imshow(frame.astype(int))
+
         ## Motion detection
         # Convert to black and white
         frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -270,54 +286,61 @@ try:
 
         # Detect motion
         # mt = datetime.datetime.now()
-        X = motion.detect(frame_bw)
+        th, bounding_boxes = motion.detect(frame_bw)
+
+        if plot_mode_on and th is not None:
+            ax1.imshow(th, alpha=0.25)
+
         # dmt = datetime.datetime.now() - mt
         # print("Motion detection time: " + str(dmt.total_seconds()))
         motion_detected = False
-        if X is not None:  # Motion is detected
+        if bounding_boxes is not None:  # Motion is detected
             # print("Line 278")
 
-            # Unpack group of bounding boxes
-            _, bounding_boxes = X
+            # print("Line 285")
 
+            motion_detected = True
 
-            if bounding_boxes != [] and doNN:
-                # print("Line 285")
+            # Initialize image container
+            all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
 
-                motion_detected = True
+            # Initialize movement indicator grid
+            grid = np.zeros((num_image_steps[0], num_image_steps[1])).astype(np.bool)
 
-                # Initialize image container
-                all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
+            for bb in bounding_boxes:
 
-                # Initialize movement indicator grid
-                grid = np.zeros((num_image_steps[0], num_image_steps[1])).astype(np.bool)
+                # Unpack the single bounding box
+                x, y, w, h = bb
 
-                for bb in bounding_boxes:
+                if plot_mode_on:
+                    rect = patches.Rectangle((x, y), w, h,
+                                             linewidth=1.5,
+                                             edgecolor="white",
+                                             facecolor='none')
+                    ax1.add_patch(rect)
 
-                    # Unpack the single bounding box
-                    x, y, w, h = bb
+                # Prevent too many images will be activated
+                if w > win_size[1]:
+                    x = x + w / 2 - win_size[1] / 2
+                    w = win_size[1]
 
-                    # Prevent too many images will be activated
-                    if w > win_size[1]:
-                        x = x + w / 2 - win_size[1] / 2
-                        w = win_size[1]
+                if h > win_size[0]:
+                    y = y + h / 2 - win_size[0] / 2
+                    w = win_size[0]
 
-                    if h > win_size[0]:
-                        y = y + h / 2 - win_size[0] / 2
-                        w = win_size[0]
+                # Calculate x & y positions on grid ("pixels to idx")
+                # x
+                low_x = np.floor(x / step_size[1]).astype(np.int)
+                high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
+                # y
+                low_y = np.floor(y / step_size[0]).astype(np.int)
+                high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
 
-                    # Calculate x & y positions on grid ("pixels to idx")
-                    # x
-                    low_x = np.floor(x / step_size[1]).astype(np.int)
-                    high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
-                    # y
-                    low_y = np.floor(y / step_size[0]).astype(np.int)
-                    high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
+                # Set grid values overlapping with bounding box to true
+                grid[low_y: high_y, low_x: high_x] = True
 
-                    # Set grid values overlapping with bounding box to true
-                    grid[low_y: high_y, low_x: high_x] = True
-
-                # print("Line 311")
+            # print("Line 311")
+            if doNN:
 
                 # Grab images where bounding boxes moving object
                 img_count = 0  # reset image count
@@ -588,8 +611,13 @@ try:
         # Get loop delay
         dt = datetime.datetime.now() - t
         delay = dt.total_seconds()
-        # print("Loop time = " + str(delay))
-        debug_txt = debug_txt + "Loop time = " + str(delay) + "\n"
+
+        # Add info on motion detection background state
+        # debug_txt = debug_txt + "BG Updated = " + str(motion.updated) + "\n"
+        # debug_txt = debug_txt + "BG Sum = " + str(motion.sum_thresh_bg) + "\n"
+        # debug_txt = debug_txt + "BG Sum main = " + str(motion.sum_thresh_bg_main) + "\n"
+
+        debug_txt = debug_txt + "Loop time = " + str(delay)
 
         debug_file = open(stream_folder + "debug_info.txt", "w+")
         debug_file.write(debug_txt)
@@ -610,7 +638,25 @@ try:
                 e_mailer.sendmail("jensenmeredithl@gmail.com", "Electric Birder Alert!", emailContent, image_capture_folder + filename)
 
                 # Reset count
-                bird_classifications_count[i]=0
+                bird_classifications_count[i] = 0
+
+        # Update figure
+        if plot_mode_on:
+            plt.title(str(datetime.datetime.now()))
+
+            props = dict(boxstyle='round', facecolor='white', alpha=0.8)
+            ax1.text(10,
+                     10,
+                     debug_txt,
+                     fontsize=12,
+                     verticalalignment='top',
+                     bbox=props)
+
+            plt.draw()
+            plt.pause(0.002)
+            plt.ioff()
+            plt.show()
+
 
         # Inc loop count
         loop_count += 1
