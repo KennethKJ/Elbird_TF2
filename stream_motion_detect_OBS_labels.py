@@ -35,7 +35,7 @@ stream_folder = "E:\\Electric Bird Caster\\"
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
-IP_start = 101
+IP_start = 100
 IP = IP_start
 username = "admin"
 password = "JuLian50210809"
@@ -45,7 +45,7 @@ channel = "1"
 subtype = "0"
 
 # Image windowing parameters
-win_size = (int(224*3), int(224*3))
+win_size = (int(224*2), int(224*2))
 target_img_size = (224, 224)
 num_image_steps = (3, 8)  # (int(win_size[0]/2), int(win_size[1]/2))
 
@@ -185,12 +185,16 @@ nuthins_seen = 0
 restart_no = 0
 loop_count = 0
 
+WIN_MODE_FIXED = 0
+WIN_MODE_FLOATING = 1
+mode = WIN_MODE_FLOATING
+
 print("Starting loop")
 try:
 
     while 1 == 1:
-        # print("Line 181")
-        # Update t for next loop
+
+        # Update t
         t = datetime.datetime.now()
 
         # Reset loop variables
@@ -214,7 +218,6 @@ try:
         # Then get most recent frame
         ret, frame = cap.read()
         num_frames += 1
-        # print("Line 206")
 
         # Retry connecting to capture device if frame was none
         if frame is None:
@@ -282,7 +285,6 @@ try:
         ## Motion detection
         # Convert to black and white
         frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        # print("Line 269")
 
         # Detect motion
         # mt = datetime.datetime.now()
@@ -295,52 +297,48 @@ try:
         # print("Motion detection time: " + str(dmt.total_seconds()))
         motion_detected = False
         if bounding_boxes is not None:  # Motion is detected
-            # print("Line 278")
-
-            # print("Line 285")
 
             motion_detected = True
 
             # Initialize image container
             all_image_snippets = np.zeros((0, target_img_size[0], target_img_size[1], 3)).astype(np.int)
 
-            # Initialize movement indicator grid
-            grid = np.zeros((num_image_steps[0], num_image_steps[1])).astype(np.bool)
+            if mode == WIN_MODE_FIXED:
 
-            for bb in bounding_boxes:
+                # Initialize movement indicator grid
+                grid = np.zeros((num_image_steps[0], num_image_steps[1])).astype(np.bool)
+                for bb in bounding_boxes:
 
-                # Unpack the single bounding box
-                x, y, w, h = bb
+                    # Unpack the single bounding box
+                    x, y, w, h = bb
 
-                if plot_mode_on:
-                    rect = patches.Rectangle((x, y), w, h,
-                                             linewidth=1.5,
-                                             edgecolor="white",
-                                             facecolor='none')
-                    ax1.add_patch(rect)
+                    # Add bounding box to plot
+                    if plot_mode_on:
+                        rect = patches.Rectangle((x, y), w, h,
+                                                 linewidth=1.5,
+                                                 edgecolor="white",
+                                                 facecolor='none')
+                        ax1.add_patch(rect)
 
-                # Prevent too many images will be activated
-                if w > win_size[1]:
-                    x = x + w / 2 - win_size[1] / 2
-                    w = win_size[1]
+                    # Prevent too many images will be activated
+                    if w > win_size[1]:
+                        x = x + w / 2 - win_size[1] / 2
+                        w = win_size[1]
 
-                if h > win_size[0]:
-                    y = y + h / 2 - win_size[0] / 2
-                    w = win_size[0]
+                    if h > win_size[0]:
+                        y = y + h / 2 - win_size[0] / 2
+                        w = win_size[0]
 
-                # Calculate x & y positions on grid ("pixels to idx")
-                # x
-                low_x = np.floor(x / step_size[1]).astype(np.int)
-                high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
-                # y
-                low_y = np.floor(y / step_size[0]).astype(np.int)
-                high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
+                    # Calculate x & y positions on grid ("pixels to idx")
+                    # x
+                    low_x = np.floor(x / step_size[1]).astype(np.int)
+                    high_x = np.ceil((x + w) / step_size[1]).astype(np.int)
+                    # y
+                    low_y = np.floor(y / step_size[0]).astype(np.int)
+                    high_y = np.ceil((y + h) / step_size[0]).astype(np.int)
 
-                # Set grid values overlapping with bounding box to true
-                grid[low_y: high_y, low_x: high_x] = True
-
-            # print("Line 311")
-            if doNN:
+                    # Set grid values overlapping with bounding box to true
+                    grid[low_y: high_y, low_x: high_x] = True
 
                 # Grab images where bounding boxes moving object
                 img_count = 0  # reset image count
@@ -367,7 +365,6 @@ try:
 
                             # Increase image count
                             img_count += 1
-                # print("Line 338")
 
                 if all_image_snippets.shape[0] != 0:  # Images are present (aren't they always at this stage?)
 
@@ -379,7 +376,7 @@ try:
                     mt = datetime.datetime.now()
                     pred = model.predict(all_image_snippets)
                     dmt = datetime.datetime.now() - mt
-                    model_pred_time=dmt.total_seconds()
+                    model_pred_time = dmt.total_seconds()
                     # print("Done after " + str(model_pred_time) + " seconds")
 
                     # Get index of classified birds/animals
@@ -466,7 +463,7 @@ try:
                                 if len(the_situation) > num_classifications and cluster_prop > main_prob_criteria: # HIT! (more than 5 detections and over 70% mean certainty)
 
                                     # Apply higher restrictions on troublesome classes
-                                    if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c==27) and cluster_prop < 90:  # Stricter rule for blue jay and others due to many false alarms
+                                    if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c == 27) and cluster_prop < 90:  # Stricter rule for blue jay and others due to many false alarms
                                         continue
 
                                     # recategorizing of "off duty" Starlings
@@ -529,9 +526,109 @@ try:
                                     # Append data to dataframe
                                     df = df.append(data_dict, ignore_index=True)
 
-        # Write labels to file for OBS
-        # print("Line 501")
+            elif mode == WIN_MODE_FLOATING:
 
+                for bb in bounding_boxes:
+
+                    # Unpack the single bounding box
+                    x, y, w, h = bb
+
+                    if plot_mode_on:
+                        rect = patches.Rectangle((x, y), w, h,
+                                                 linewidth=1.5,
+                                                 edgecolor="white",
+                                                 facecolor='none')
+                        ax1.add_patch(rect)
+
+                    # Find bb center
+                    x_c = x + w/2
+                    y_c = y + w/2
+
+                    growth_factor = 1.2
+                    # Make bb square and apply growth factor
+                    if w > h:
+                        h = w*growth_factor
+                    else:
+                        w = h*growth_factor
+
+                    #
+                    # # Redefine bb
+                    # h = win_size[0]
+                    # w = win_size[1]
+                    # y = y_c - h/2
+                    # x = x_c - w/2
+
+                    # Assure the new bb still fits within image
+                    if x + w > frame_width:
+                        x = x - (x+w - frame_width)
+
+                    if y + h > frame_height:
+                        y = y - (y+h - frame_height)
+
+                    # Assure integer values
+                    h = int(h)
+                    w = int(w)
+                    x = int(x)
+                    y = int(y)
+
+                    # Add new bounding box to plot
+                    rect = patches.Rectangle((x, y), w, h,
+                                             linewidth=2,
+                                             edgecolor="green",
+                                             facecolor='none')
+                    ax1.add_patch(rect)
+
+                    # Grab image
+                    img_snippet = frame[y: y + h,  # height
+                                        x: x + w,  # width
+                                        :]  # channels
+
+                    # Resize image
+                    if x < 0 or y < 0:
+                        print("WRONG!")
+                    else:
+                        img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
+
+                    # Stack onto collection of images to run NN on
+                    all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
+
+                    # Increase image count
+                    img_count += 1
+
+                if all_image_snippets.shape[0] != 0:  # Images are present (aren't they always at this stage?)
+
+                    # Preprocess images according to model requirement
+                    all_image_snippets = preprocess_input(all_image_snippets)
+
+                    # Run (and time) model predictions
+                    # print("Running model on " + str(img_count) + " images")
+                    mt = datetime.datetime.now()
+                    pred = model.predict(all_image_snippets)
+                    dmt = datetime.datetime.now() - mt
+                    model_pred_time = dmt.total_seconds()
+                    # print("Done after " + str(model_pred_time) + " seconds")
+
+                    # Get index of classified birds/animals
+                    bird_classes = np.argmax(pred, axis=1)
+
+                    # Get maxima of props and convert to %
+                    pred_probs = np.max(pred, axis=1)*100
+
+                    # Remove background classifications
+                    pred_probs = pred_probs[bird_classes != 3]
+                    bird_classes = bird_classes[bird_classes != 3]
+
+                    # Cycle through each clasification
+                    for i, c in enumerate(bird_classes):
+
+                        if pred_probs[i] > minimum_prob:
+                            # Tracker for e-mailing system
+                            bird_classifications_count[c] += 1
+
+                            # Raise the detected flag!
+                            birds_seen_lately[c] = ID_stay_time
+
+        # Create label file for OBS
         if np.sum(birds_seen_lately) > 0:
 
             label_file = open(stream_folder + "label.txt", "w+")
@@ -557,7 +654,7 @@ try:
 
             nuthins_seen = 1  # This switch is to ensure to write this ti label file only once if a strech of nothing is going on at the feeder
 
-        # Save dataframe to csv every 5 minutes
+        # Save dataframe to csv file on disk every 5 minutes
         if loop_count % 300 == 0:
 
             df_filename = str(datetime.datetime.today().year) + '_' + \
@@ -656,7 +753,6 @@ try:
             plt.pause(0.002)
             plt.ioff()
             plt.show()
-
 
         # Inc loop count
         loop_count += 1
