@@ -22,13 +22,17 @@ print("Running Electric Birder")
 doNN = True
 doAVI = False
 plot_mode_on = True
+DEBUG = False
 
-minimum_prob = 55  # The minimum probability for selection
-main_prob_criteria = 70  # Main criteria for a final classsification (mean of num_classifications)
+minimum_prob = 0  # The minimum probability for selection
+main_prob_criteria = 90  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
-ID_stay_time = 7  # Cycles before a positive ID has faded away in the species ID panel
+ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID panel
 num_cycles_in_history = 3  # Number of cycles in history
 max_dist = 5  # max allowed distance when looking for classification clusters of same species
+
+alpha_detect = 0.8
+alpha_decay = 0.01
 
 # Folders
 stream_folder = "E:\\Electric Bird Caster\\"
@@ -49,11 +53,10 @@ win_size = (int(224*2), int(224*2))
 target_img_size = (224, 224)
 num_image_steps = (3, 8)  # (int(win_size[0]/2), int(win_size[1]/2))
 
-
 # Load model
 print('Neural network starting up, please wait ... ' + "\n")
 label_file = open(stream_folder + "label.txt", "w+")
-label_file.write('Restarting, this takes several minutes, please wait ... :| ' + "\n")
+label_file.write('Restarting, please wait ... :| ' + "\n")
 label_file.close()
 
 debug_file = open(stream_folder + "debug_info.txt", "w+")
@@ -62,7 +65,6 @@ debug_file.write('The neural network is starting up \n')
 # debug_file.write('This takes a minute or two' + "\n")
 debug_file.write('Please wait ... ' + "\n")
 debug_file.close()
-
 
 if doNN:
     print("Loading model ... ")
@@ -102,11 +104,33 @@ pretty_names_list = [
     'Tufted titmouse',
     'White-breasted nuthatch']  # 27
 
+# Species specific thresholds/hysteresis
+prob_hysteresis_higher = []
+prob_hysteresis_lower = []
+default_higher = 90
+default_difference_to_lower = 10
+for c in range(len(pretty_names_list)):
+
+    # Troublesome species that need higher criteria
+    if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c == 27):
+
+        prob_hysteresis_higher.append(default_higher + 7)
+        prob_hysteresis_lower.append(default_higher + 7 - default_difference_to_lower)
+
+    # Regular
+    else:
+
+        prob_hysteresis_higher.append(default_higher)
+        prob_hysteresis_lower.append(default_higher - default_difference_to_lower)
+
+
+
 print("Initializing camera")
 if doAVI:
     # ss = "E:\Electric Bird Caster\Videos\Test1.avi"
     # ss = "E:\Electric Bird Caster\Videos\Testy.avi"
-    ss = "E:\Electric Bird Caster\Videos\MoveDetectAndRecognize.avi"
+    # ss = "E:\Electric Bird Caster\Videos\MoveDetectAndRecognize.avi"
+    ss = "E:\\Electric Bird Caster\\Videos\\apr 29.avi"
 
     cap = cv2.VideoCapture(ss)
     # cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\sun and birds.avi")
@@ -131,8 +155,8 @@ frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 # Initialize motion detector
 motion = smd.SingleMotionDetector()
-motion.update_bg(frame_bw)
-motion.update_bg_main(frame_bw)
+# motion.update_bg(frame_bw)
+# motion.update_bg_main(frame_bw)
 
 # Get image size and calc windowing related parameters
 frame_height, frame_width, _ = frame.shape  # img_pil = img_pil.resize((int(w/3), int(h/3)))
@@ -189,6 +213,10 @@ WIN_MODE_FIXED = 0
 WIN_MODE_FLOATING = 1
 mode = WIN_MODE_FLOATING
 
+if mode == WIN_MODE_FLOATING:
+    pred_probs_floating = np.zeros((len(pretty_names_list), 1))
+    images_saved = np.zeros((len(pretty_names_list), 1))
+
 print("Starting loop")
 try:
 
@@ -198,26 +226,35 @@ try:
         t = datetime.datetime.now()
 
         # Reset loop variables
-        img_count = -1
+        img_count = 0
         model_pred_time = 0
+        frame_rate = cap.get(cv2.CAP_PROP_FPS)
 
-        # Skip over old frames
-        grab_delay = 0
         num_frames = 0
-        while grab_delay < 0.1:
-            T = datetime.datetime.now()
-            ret = cap.grab()
-            dT = datetime.datetime.now() - T
-            grab_delay = dT.total_seconds()
-            # print(delay_grab)
-            num_frames += 1
-            if num_frames > 500:
-                grab_delay = 1
-                print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + str(T))
+        if doAVI:
+            ret, frame = cap.read()
+        else:
+            # Skip over old frames
+            grab_delay = 0
+            # print("Loop No " + str(loop_count) + "*********************")
+            while grab_delay < 1/(frame_rate+1):
+                T = datetime.datetime.now()
+                ret = cap.grab()
+                dT = datetime.datetime.now() - T
+                grab_delay = dT.total_seconds()
+                # print("Grab delay = " + str(grab_delay) + " Thr = " + str(1/(frame_rate+1)))
+                num_frames += 1
+                if num_frames > 50*frame_rate:
+                    grab_delay = 1
+                    print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + str(T))
 
-        # Then get most recent frame
-        ret, frame = cap.read()
-        num_frames += 1
+            # Then get most recent frame
+            ret, frame = cap.read()
+            num_frames += 1
+
+            if DEBUG:
+                dt = datetime.datetime.now() - t
+                print("Frame read: " + str(dt.total_seconds()))
 
         # Retry connecting to capture device if frame was none
         if frame is None:
@@ -287,11 +324,20 @@ try:
         frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
         # Detect motion
-        # mt = datetime.datetime.now()
+        mt = datetime.datetime.now()
         th, bounding_boxes = motion.detect(frame_bw)
+        dmt = datetime.datetime.now() - mt
+        motion_detection_time = dmt.total_seconds()
+
+        if DEBUG:
+            dt = datetime.datetime.now() - t
+            print("Motion detetion done: " + str(dt.total_seconds()))
 
         if plot_mode_on and th is not None:
+            # if not motion.updated_area_exist:
             ax1.imshow(th, alpha=0.25)
+            # else:
+            #     ax1.imshow(motion.updated_area, alpha=0.25)
 
         # dmt = datetime.datetime.now() - mt
         # print("Motion detection time: " + str(dmt.total_seconds()))
@@ -528,6 +574,9 @@ try:
 
             elif mode == WIN_MODE_FLOATING:
 
+                if DEBUG:
+                    print('Num BBs = ' + str(len(bounding_boxes)))
+
                 for bb in bounding_boxes:
 
                     # Unpack the single bounding box
@@ -536,20 +585,32 @@ try:
                     if plot_mode_on:
                         rect = patches.Rectangle((x, y), w, h,
                                                  linewidth=1.5,
-                                                 edgecolor="white",
+                                                 edgecolor="black",
                                                  facecolor='none')
                         ax1.add_patch(rect)
 
                     # Find bb center
                     x_c = x + w/2
-                    y_c = y + w/2
+                    y_c = y + h/2
 
-                    growth_factor = 1.2
+                    growth_factor = 1.1
+                    # growth_factor = 1 + (frame_height/h - 1)
                     # Make bb square and apply growth factor
                     if w > h:
                         h = w*growth_factor
+                        w = h
+
                     else:
                         w = h*growth_factor
+                        h = w
+
+                    # Limit the height and width
+                    h = min(h, frame_height)
+                    w = min(w, frame_width)
+
+                    # Calculate new x,y and make sure they are above 0
+                    x = max(0, x_c - w/2)
+                    y = max(0, y_c - h/2)
 
                     #
                     # # Redefine bb
@@ -574,9 +635,12 @@ try:
                     # Add new bounding box to plot
                     rect = patches.Rectangle((x, y), w, h,
                                              linewidth=2,
-                                             edgecolor="green",
+                                             edgecolor="white",
                                              facecolor='none')
                     ax1.add_patch(rect)
+
+                    if not doNN:
+                        continue
 
                     # Grab image
                     img_snippet = frame[y: y + h,  # height
@@ -584,13 +648,18 @@ try:
                                         :]  # channels
 
                     # Resize image
-                    if x < 0 or y < 0:
+                    if (x < 0) or (y < 0):
                         print("WRONG!")
+                        print(x)
+                        print(y)
                     else:
                         img_snippet = cv2.resize(img_snippet, dsize=target_img_size, interpolation=cv2.INTER_CUBIC)
 
                     # Stack onto collection of images to run NN on
-                    all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
+                    try:
+                        all_image_snippets = np.concatenate((all_image_snippets, np.expand_dims(img_snippet, axis=0)))
+                    except:
+                        print("oops")
 
                     # Increase image count
                     img_count += 1
@@ -608,42 +677,114 @@ try:
                     model_pred_time = dmt.total_seconds()
                     # print("Done after " + str(model_pred_time) + " seconds")
 
+                    if DEBUG:
+                        dt = datetime.datetime.now() - t
+                        print("Model predictions done: " + str(dt.total_seconds()))
+
                     # Get index of classified birds/animals
                     bird_classes = np.argmax(pred, axis=1)
 
                     # Get maxima of props and convert to %
-                    pred_probs = np.max(pred, axis=1)*100
+                    pred_probs = np.max(pred, axis=1) * 100
 
                     # Remove background classifications
                     pred_probs = pred_probs[bird_classes != 3]
                     bird_classes = bird_classes[bird_classes != 3]
 
-                    # Cycle through each clasification
+                    # Cycle through each classification and update filter
                     for i, c in enumerate(bird_classes):
 
-                        if pred_probs[i] > minimum_prob:
-                            # Tracker for e-mailing system
-                            bird_classifications_count[c] += 1
+                        if pred_probs[i] > pred_probs_floating[c][0]:
 
-                            # Raise the detected flag!
-                            birds_seen_lately[c] = ID_stay_time
+                            # One pole filter
+                            pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
+                                (1-alpha_detect) * pred_probs_floating[c][0]
+
+                    for c, p in enumerate(pred_probs_floating):
+
+                        if p >= prob_hysteresis_higher[c]:
+
+                            # Tracker for e-mailing system
+                            bird_classifications_count[c] = 1
+
+                            birds_seen_lately[c] = 1
+
+
+
+                    # Cycle through each classification again for data saving
+                    filename = ''
+                    for i, c in enumerate(bird_classes):
+
+                        # Save frame to image file (if this is a new frame/loop and anything was classified)
+                        if loop_count != last_loop_count and birds_seen_lately[c] and  pred_probs[i] > 80 and images_saved[c][0] < 100:
+
+                            images_saved[c][0] += 1
+
+                            # Generate filename for saving image
+                            filename = str(datetime.datetime.today().year) + '_' + \
+                                       str(datetime.datetime.today().month) + '_' + \
+                                       str(datetime.datetime.today().day) + '_' + \
+                                       str(datetime.datetime.now().hour) + '_' + \
+                                       str(datetime.datetime.now().minute) + '_' + \
+                                       str(datetime.datetime.now().second) + '_' + \
+                                       str(datetime.datetime.now().microsecond) + '_' + \
+                                       'loop_' + str(loop_count) + \
+                                       '.jpg'
+
+                            # Save frame to image
+                            cv2.imwrite(image_capture_folder + filename, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+                        # Save loop count
+                        last_loop_count = loop_count
+
+                        # Save to data frame if detection has been made
+                        if birds_seen_lately[c] and pred_probs[i] > 70:
+                            # Assemble dict of data for data frame
+                            data_dict = {'year': datetime.datetime.today().year,
+                                         'month': datetime.datetime.today().month,
+                                         'day': datetime.datetime.today().day,
+                                         'hour': datetime.datetime.now().hour,
+                                         'minute': datetime.datetime.now().minute,
+                                         'second': datetime.datetime.now().second,
+                                         'birdID': c,
+                                         'bird_name': pretty_names_list[c][0],
+                                         'classification_probability_overall': pred_probs_floating[c][0],
+                                         'classification_probability_instance': pred_probs[i],
+                                         'loop_cycle': loop_count,
+                                         'bounding_box': bounding_boxes[i],
+                                         'image_filename': filename}
+
+                            # Append data to dataframe
+                            df = df.append(data_dict, ignore_index=True)
+
+        for c in range(len(pred_probs_floating)):
+
+            # Apply decay
+            pred_probs_floating[c][0] = alpha_decay * minimum_prob + \
+                                        (1 - alpha_decay) * pred_probs_floating[c][0]
+
+            if pred_probs_floating[c][0] < prob_hysteresis_lower[c]:
+
+                 birds_seen_lately[c] = 0
+
 
         # Create label file for OBS
+        label_txt = ''
         if np.sum(birds_seen_lately) > 0:
 
-            label_file = open(stream_folder + "label.txt", "w+")
+            for c, yes in enumerate(birds_seen_lately):
 
-            for i, c in enumerate(birds_seen_lately):
+                # # Subtract one to "forget" some over each cycle
+                # if birds_seen_lately[c] > 0:
+                #     birds_seen_lately[c] -= 1
 
-                # Subtract one to "forget" some over each cycle
-                if birds_seen_lately[i] > 0:
-                    birds_seen_lately[i] -= 1
-
-                # Add too labels if active
-                if c:
-                    label_file.write(pretty_names_list[i] + "\n")
+                if yes:
+                    running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
+                    label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
                     nuthins_seen = 0
 
+            label_file = open(stream_folder + "label.txt", "w+")
+            label_file.write(label_txt)
             label_file.close()
 
         elif nuthins_seen == 0:  # When no detections has been made
@@ -656,6 +797,7 @@ try:
 
         # Save dataframe to csv file on disk every 5 minutes
         if loop_count % 300 == 0:
+            # print("Saving data frame to disk ")
 
             df_filename = str(datetime.datetime.today().year) + '_' + \
                           str(datetime.datetime.today().month) + '_' + \
@@ -664,9 +806,13 @@ try:
 
             df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
 
+            if DEBUG:
+                dt = datetime.datetime.now() - t
+                print("Data frame interim saving done: " + str(dt.total_seconds()))
+
         # Save data frame and create a new if a new hour of the day has started
         if current_hour != datetime.datetime.now().hour:
-
+            print("Saving data frame to disk and create new for next hour")
             df_filename = str(datetime.datetime.today().year) + '_' + \
                           str(datetime.datetime.today().month) + '_' + \
                           str(datetime.datetime.today().day) + '_' + \
@@ -693,34 +839,9 @@ try:
             # Update current hour
             current_hour = datetime.datetime.today().hour
 
-        # Update debug info
-        debug_txt = ""  # Reset debug info text
-        debug_txt = debug_txt + "LOOP no. " + str(loop_count) + "\n"
-        debug_txt = debug_txt + "Num frames run through: " + str(num_frames) + "\n"
-        if motion_detected:
-            debug_txt = debug_txt + "MOTION DETECTED!" + "\n"
-        else:
-            debug_txt = debug_txt + "No motion" + "\n"
-
-        debug_txt = debug_txt + "Total images for model: " + str(img_count) + "\n"
-        debug_txt = debug_txt + "Model prediction time: " + str(model_pred_time) + "\n"
-
-        # Get loop delay
-        dt = datetime.datetime.now() - t
-        delay = dt.total_seconds()
-
-        # Add info on motion detection background state
-        # debug_txt = debug_txt + "BG Updated = " + str(motion.updated) + "\n"
-        # debug_txt = debug_txt + "BG Sum = " + str(motion.sum_thresh_bg) + "\n"
-        # debug_txt = debug_txt + "BG Sum main = " + str(motion.sum_thresh_bg_main) + "\n"
-
-        debug_txt = debug_txt + "Loop time = " + str(delay)
-
-        debug_file = open(stream_folder + "debug_info.txt", "w+")
-        debug_file.write(debug_txt)
-        debug_file.close()
-
-        # print("Line 589")
+            if DEBUG:
+                dt = datetime.datetime.now() - t
+                print("Data frame hourly saving done: " + str(dt.total_seconds()))
 
         # E-mail notification
         bird_of_interest = 22
@@ -737,9 +858,54 @@ try:
                 # Reset count
                 bird_classifications_count[i] = 0
 
+                if DEBUG:
+                    dt = datetime.datetime.now() - t
+                    print("E-mail processing done: " + str(dt.total_seconds()))
+
+
+        # Update debug info
+        debug_txt = ""  # Reset debug info text
+        debug_txt = debug_txt + "LOOP no. " + str(loop_count) + "\n"
+        debug_txt = debug_txt + "Num frames run through: " + str(num_frames) + "\n"
+        if motion_detected:
+            debug_txt = debug_txt + "Motion" + "\n"
+        else:
+            debug_txt = debug_txt + "No motion" + "\n"
+
+        debug_txt = debug_txt + "Motion detection time: " + str(motion_detection_time) + "\n"
+        debug_txt = debug_txt + "Total images for model: " + str(img_count) + "\n"
+        debug_txt = debug_txt + "Model prediction time: " + str(model_pred_time) + "\n"
+        if motion.is_stagnant:
+            debug_txt = debug_txt + "Stagnant BB eliminated" + "\n"
+        else:
+            debug_txt = debug_txt + "BB Ok" + "\n"
+
+        debug_txt = debug_txt + "Frame rate = " + str(frame_rate) + "\n"
+
+        # Add info on motion detection background state
+        # debug_txt = debug_txt + "BG Updated = " + str(motion.updated) + "\n"
+        # debug_txt = debug_txt + "BG Sum = " + str(motion.sum_thresh_bg) + "\n"
+        # debug_txt = debug_txt + "BG Sum main = " + str(motion.sum_thresh_bg_main) + "\n"
+        # Get loop delay
+
+
+        # Finish off debug info
+        dt = datetime.datetime.now() - t
+        delay = dt.total_seconds()
+
+        debug_txt = debug_txt + "Loop time = " + str(delay)
+
+        debug_file = open(stream_folder + "debug_info.txt", "w+")
+        debug_file.write(debug_txt)
+        debug_file.close()
+
+        if DEBUG:
+            dt = datetime.datetime.now() - t
+            print("Debug text processing done: " + str(dt.total_seconds()))
+
         # Update figure
         if plot_mode_on:
-            plt.title(str(datetime.datetime.now()))
+            ax1.set_title(str(datetime.datetime.now()))
 
             props = dict(boxstyle='round', facecolor='white', alpha=0.8)
             ax1.text(10,
@@ -749,16 +915,28 @@ try:
                      verticalalignment='top',
                      bbox=props)
 
+            ax1.text(frame_width - 400,
+                     10,
+                     label_txt,
+                     fontsize=12,
+                     verticalalignment='top',
+                     bbox=props)
+
             plt.draw()
             plt.pause(0.002)
             plt.ioff()
             plt.show()
+
+            if DEBUG:
+                dt = datetime.datetime.now() - t
+                print("Plotting done: " + str(dt.total_seconds()))
 
         # Inc loop count
         loop_count += 1
         # print("Line 608, end of loop")
 
 except:
+
     print("SHIT!!!")
     raise
 
