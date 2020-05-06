@@ -39,7 +39,7 @@ stream_folder = "E:\\Electric Bird Caster\\"
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
-IP_start = 100
+IP_start = 101
 IP = IP_start
 username = "admin"
 password = "JuLian50210809"
@@ -187,10 +187,10 @@ df = pd.DataFrame(columns=['year',
                            'second',
                            'birdID',
                            'bird_name',
-                           'classification_probability',
+                           'classification_probability_overall',
+                           'classification_probability_instance',
                            'loop_cycle',
-                           'horz_location',
-                           'vert_location',
+                           'bounding_box',
                            'image_filename'])
 
 # Initializing E-mailer
@@ -747,7 +747,7 @@ try:
                                          'minute': datetime.datetime.now().minute,
                                          'second': datetime.datetime.now().second,
                                          'birdID': c,
-                                         'bird_name': pretty_names_list[c][0],
+                                         'bird_name': pretty_names_list[c],
                                          'classification_probability_overall': pred_probs_floating[c][0],
                                          'classification_probability_instance': pred_probs[i],
                                          'loop_cycle': loop_count,
@@ -830,10 +830,10 @@ try:
                                        'second',
                                        'birdID',
                                        'bird_name',
-                                       'classification_probability',
+                                       'classification_probability_overall',
+                                       'classification_probability_instance',
                                        'loop_cycle',
-                                       'horz_location',
-                                       'vert_location',
+                                       'bounding_box',
                                        'image_filename'])
 
             # Update current hour
