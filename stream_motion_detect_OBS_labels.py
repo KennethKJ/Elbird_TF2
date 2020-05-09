@@ -261,20 +261,22 @@ try:
 
             print('Frame was None ' + str(datetime.datetime.now()))
 
-            wait_time = 0.1
+            wait_time = 0.01
             IP = IP_start - 1
             while frame is None:
 
                 # Let go of capture object
+                print(' * Releasing current camera object')
                 cap.release()
 
                 # Inform
+                print(' * Writing label to streaming SW')
                 label_file = open(stream_folder + "label.txt", "w+")
                 label_file.write('< Camera connection issues > \n < Retrying to connect in ' + str(wait_time) + ' seconds >')
                 label_file.close()
 
                 # print('Trying again in ' + str(wait_time) + ' secs ...')
-                print('Trying again ...')
+                print(' * Trying to connect again ...')
                 time.sleep(wait_time)
 
                 # Increase last 3 IP numbers
@@ -288,7 +290,7 @@ try:
                      ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
 
                 # Inform
-                print('Retrying with IP = ' + str(IP))
+                print(' * Retrying with IP = ' + str(IP))
                 label_file = open(stream_folder + "label.txt", "w+")
                 label_file.write('< Retrying camera connection with IP = ' + str(IP) + ' >')
                 label_file.close()
@@ -297,6 +299,9 @@ try:
                 cap = cv2.VideoCapture(ss)
                 ret, frame = cap.read()
 
+                if frame is None:
+                    print(" * Connection unsuccessful ...")
+
             else:
                 restart_no += 1
 
@@ -304,7 +309,7 @@ try:
                 label_file = open(stream_folder + "label.txt", "w+")
                 label_file.write('< Connection re-established >')
                 label_file.close()
-                print('Connection re-established ' + str(datetime.datetime.now()))
+                print(' * Connection re-established ' + str(datetime.datetime.now()))
 
         try:
             # Change color format
