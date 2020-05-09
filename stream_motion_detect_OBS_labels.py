@@ -261,7 +261,7 @@ try:
 
             print('Frame was None ' + str(datetime.datetime.now()))
 
-            wait_time = 3
+            wait_time = 0.1
             IP = IP_start - 1
             while frame is None:
 
@@ -273,7 +273,8 @@ try:
                 label_file.write('< Camera connection issues > \n < Retrying to connect in ' + str(wait_time) + ' seconds >')
                 label_file.close()
 
-                print('Trying again in ' + str(wait_time) + ' secs ...')
+                # print('Trying again in ' + str(wait_time) + ' secs ...')
+                print('Trying again ...')
                 time.sleep(wait_time)
 
                 # Increase last 3 IP numbers

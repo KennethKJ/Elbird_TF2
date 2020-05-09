@@ -10,14 +10,14 @@ import datetime as dt
 
 class SingleMotionDetector:
 
-	def __init__(self, accumWeight = 0.6):  # 0.6 0.4
+	def __init__(self, accumWeight = 0.65):  # 0.6 0.4
 		# store the accumulated weight factor
 		self.accumWeight_bg = accumWeight
 
 		# MAin BG
-		self.accumWeight_bg_main_initial = 0.4  # 0.45
-		self.accumWeight_bg_main = 0.35  #0.2
-		self.accumWeight_bg_main_slow = 0.125  #0.07
+		self.accumWeight_bg_main_initial = 0.3  # 0.45
+		self.accumWeight_bg_main = 0.5  #0.2 0.35
+		self.accumWeight_bg_main_slow = 0.3  #0.07 0.125
 
 		# initialize the background model
 		self.bg = None
