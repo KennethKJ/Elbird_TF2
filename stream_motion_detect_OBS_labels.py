@@ -135,8 +135,11 @@ if doAVI:
     cap = cv2.VideoCapture(ss)
     # cap = cv2.VideoCapture("E:\Electric Bird Caster\Videos\sun and birds.avi")
 else:
-    ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
-         ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
+    # ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
+    #      ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
+
+    ss = "rtsp://admin:JuLian50210809@192.168.0.200:554/Streaming/Channels/101/"
+
     cap = cv2.VideoCapture(ss)
 
 print("Video source: " + ss)
@@ -286,9 +289,9 @@ try:
 
                 # Generate new string
                 IP_address = "192.168.10." + str(IP)
-                ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
-                     ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
-
+                # ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
+                #      ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
+                ss = "rtsp://admin:JuLian50210809@192.168.0.200:554/Streaming/Channels/101/"
                 # Inform
                 print(' * Retrying with IP = ' + str(IP))
                 label_file = open(stream_folder + "label.txt", "w+")
@@ -326,12 +329,18 @@ try:
             ax1.imshow(frame.astype(int))
 
         ## Motion detection
-        # Convert to black and white
-        frame_bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
         # Detect motion
         mt = datetime.datetime.now()
+
+        # Convert to black and white
+        frame_bw = cv2.cvtColor(frame.copy(), cv2.COLOR_RGB2GRAY)
+
+        # Reduce size to save time on processing
+        frame_bw = cv2.resize(frame_bw, dsize=((int(frame_width/2), int(frame_height/2))), interpolation=cv2.INTER_CUBIC)
+
         th, bounding_boxes = motion.detect(frame_bw)
+
         dmt = datetime.datetime.now() - mt
         motion_detection_time = dmt.total_seconds()
 
@@ -340,10 +349,11 @@ try:
             print("Motion detetion done: " + str(dt.total_seconds()))
 
         if plot_mode_on and th is not None:
-            # if not motion.updated_area_exist:
+
+            # Restore size
+            th = cv2.resize(th, dsize=(frame_width, frame_height), interpolation=cv2.INTER_CUBIC)
+
             ax1.imshow(th, alpha=0.25)
-            # else:
-            #     ax1.imshow(motion.updated_area, alpha=0.25)
 
         # dmt = datetime.datetime.now() - mt
         # print("Motion detection time: " + str(dmt.total_seconds()))
@@ -588,6 +598,12 @@ try:
                     # Unpack the single bounding box
                     x, y, w, h = bb
 
+                    # Restore actual size from the motion detection image size reduction
+                    x *= 2
+                    y *= 2
+                    w *= 2
+                    h *= 2
+
                     if plot_mode_on:
                         rect = patches.Rectangle((x, y), w, h,
                                                  linewidth=1.5,
@@ -785,8 +801,9 @@ try:
                 #     birds_seen_lately[c] -= 1
 
                 if yes:
-                    running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
-                    label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
+                    # running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
+                    # label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
+                    label_txt = label_txt + pretty_names_list[c] + "\n"
                     nuthins_seen = 0
 
             label_file = open(stream_folder + "label.txt", "w+")
@@ -796,7 +813,7 @@ try:
         elif nuthins_seen == 0:  # When no detections has been made
 
             label_file = open(stream_folder + "label.txt", "w+")
-            label_file.write('< --- >' + "\n")
+            label_file.write(' - - - ' + "\n")
             label_file.close()
 
             nuthins_seen = 1  # This switch is to ensure to write this ti label file only once if a strech of nothing is going on at the feeder
@@ -871,22 +888,22 @@ try:
 
         # Update debug info
         debug_txt = ""  # Reset debug info text
-        debug_txt = debug_txt + "LOOP no. " + str(loop_count) + "\n"
-        debug_txt = debug_txt + "Num frames run through: " + str(num_frames) + "\n"
+        debug_txt = debug_txt + "Loop " + str(loop_count) + "\n"
+        debug_txt = debug_txt + "Frame jumps : " + str(num_frames) + "\n"
         if motion_detected:
-            debug_txt = debug_txt + "Motion" + "\n"
+            debug_txt = debug_txt + "Motion detected" + "\n"
         else:
             debug_txt = debug_txt + "No motion" + "\n"
 
-        debug_txt = debug_txt + "Motion detection time: " + str(motion_detection_time) + "\n"
-        debug_txt = debug_txt + "Total images for model: " + str(img_count) + "\n"
-        debug_txt = debug_txt + "Model prediction time: " + str(model_pred_time) + "\n"
-        if motion.is_stagnant:
-            debug_txt = debug_txt + "Stagnant BB eliminated" + "\n"
-        else:
-            debug_txt = debug_txt + "BB Ok" + "\n"
+        debug_txt = debug_txt + "Mtn. dtc. time: " + str(np.round(motion_detection_time*1000).astype(np.int)) + ' ms' + "\n"
+        debug_txt = debug_txt + "Model images: " + str(img_count) + "\n"
+        debug_txt = debug_txt + "Mdl. pred. time: " + str(np.round(model_pred_time*1000).astype(np.int)) + ' ms' + "\n"
+        # if motion.is_stagnant:
+        #     debug_txt = debug_txt + "Stagnant BB eliminated" + "\n"
+        # else:
+        #     debug_txt = debug_txt + "BB Ok" + "\n"
 
-        debug_txt = debug_txt + "Frame rate = " + str(frame_rate) + "\n"
+        debug_txt = debug_txt + "Frame rate = " + str(frame_rate) + ' fps' + "\n"
 
         # Add info on motion detection background state
         # debug_txt = debug_txt + "BG Updated = " + str(motion.updated) + "\n"
@@ -897,9 +914,9 @@ try:
 
         # Finish off debug info
         dt = datetime.datetime.now() - t
-        delay = dt.total_seconds()
+        delay = np.round(dt.total_seconds()*1000).astype(np.int)
 
-        debug_txt = debug_txt + "Loop time = " + str(delay)
+        debug_txt = debug_txt + "Loop time = " + str(delay) + ' ms'
 
         debug_file = open(stream_folder + "debug_info.txt", "w+")
         debug_file.write(debug_txt)

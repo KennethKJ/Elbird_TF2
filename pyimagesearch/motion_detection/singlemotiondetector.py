@@ -10,14 +10,14 @@ import datetime as dt
 
 class SingleMotionDetector:
 
-	def __init__(self, accumWeight = 0.65):  # 0.6 0.4
+	def __init__(self, accumWeight = 0.5):  # 0.6 0.4
 		# store the accumulated weight factor
 		self.accumWeight_bg = accumWeight
 
-		# MAin BG
-		self.accumWeight_bg_main_initial = 0.3  # 0.45
-		self.accumWeight_bg_main = 0.5  #0.2 0.35
-		self.accumWeight_bg_main_slow = 0.3  #0.07 0.125
+		# Main BG
+		self.accumWeight_bg_main_initial = 0.7 # 0.45
+		self.accumWeight_bg_main = 0.6  #0.2 0.35
+		self.accumWeight_bg_main_slow = 0.35  #0.07 0.125
 
 		# initialize the background model
 		self.bg = None
@@ -172,7 +172,7 @@ class SingleMotionDetector:
 					C.append(C[r])
 
 				# min cluster size = 2, min distance = 0.5:
-				C, weights = cv2.groupRectangles(C, 1, 0.5)
+				C, weights = cv2.groupRectangles(C, 1, 0.75)
 
 			if len(C) > 0:
 				# # Check if the bounding box is stagnant (identical to a previous one)
@@ -222,9 +222,8 @@ class SingleMotionDetector:
 
 		self.updated_area_exist = False
 
-		# Update background if requirements are met
+		# Update background if requirements are met (# self.sum_thresh_bg < 10000 or \)
 		if C == [] and \
-			self.sum_thresh_bg < 10000 or \
 			self.sum_thresh_bg_main > 500000 or \
 			self.counter <= self.initial_bg_frames:
 			print("Full pic update" + str(dt.datetime.now()))
@@ -241,7 +240,9 @@ class SingleMotionDetector:
 			# print("Smart pic update")
 
 			# Update outside of BBs
-			idx = th1_bg_main > -1  # initialize all as true (true = update pixel in bg pic)
+
+			# initialize all as true (true = update pixel in bg pic)
+			idx = th1_bg_main > -1
 
 			# Set all in big rects as False
 			for c in C:
@@ -253,7 +254,6 @@ class SingleMotionDetector:
 			for c in C_small:
 				x, y, w, h = c
 				idx[y: y+h, x: x+w] = True
-
 
 			background_pic_bg = self.bg_main.copy()
 			if self.counter < self.initial_bg_frames * 4:
@@ -269,19 +269,22 @@ class SingleMotionDetector:
 				self.update_bg_main(background_pic_bg, self.accumWeight_bg_main)
 
 			if self.plot_mode_on:
-				background_pic_bg = self.bg_main*0
+				background_pic_bg = self.bg_main.copy()*0
 				background_pic_bg[idx] = input_image[idx]
 
 				self.ax5.clear()
 				self.ax5.imshow(background_pic_bg.astype(int))
 				self.ax5.set_title("Main BG fast update input")
 
-			self.updated_area = th1_bg_main*0
+			self.updated_area = th1_bg_main.copy()*0
 			self.updated_area[idx] = 1
 			self.updated_area_exist = True
 
-			# Update inside BBs:
-			idx = th1_bg_main == -1  # initialize all as false (true = update pixel in bg pic)
+
+			## Update inside BBs:
+
+			# initialize all as false (true = update pixel in bg pic)
+			idx = th1_bg_main == -1
 
 			# Set all in big rects as True
 			for c in C:
