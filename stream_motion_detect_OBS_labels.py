@@ -18,10 +18,10 @@ print("Running Electric Birder")
 
 ## Settings
 
-# Misc
+# Misc 00000
 doNN = True
 doAVI = False
-plot_mode_on = True
+plot_mode_on = False
 DEBUG = False
 
 minimum_prob = 0  # The minimum probability for selection
@@ -31,7 +31,7 @@ ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID
 num_cycles_in_history = 3  # Number of cycles in history
 max_dist = 5  # max allowed distance when looking for classification clusters of same species
 
-alpha_detect = 0.8
+alpha_detect = 0.75
 alpha_decay = 0.01
 
 # Folders
@@ -56,12 +56,12 @@ num_image_steps = (3, 8)  # (int(win_size[0]/2), int(win_size[1]/2))
 # Load model
 print('Neural network starting up, please wait ... ' + "\n")
 label_file = open(stream_folder + "label.txt", "w+")
-label_file.write('Restarting, please wait ... :| ' + "\n")
+label_file.write('Bird ID system startup, please wait ... :| ' + "\n")
 label_file.close()
 
 debug_file = open(stream_folder + "debug_info.txt", "w+")
-debug_file.write(str(datetime.datetime.now()) + '\n')
-debug_file.write('The neural network is starting up \n')
+# debug_file.write(str(datetime.datetime.now()) + '\n')
+debug_file.write('System start up \n')
 # debug_file.write('This takes a minute or two' + "\n")
 debug_file.write('Please wait ... ' + "\n")
 debug_file.close()
@@ -76,31 +76,31 @@ else:
 
 pretty_names_list = [
     'Crow',
-    'Goldfinch (breeding M)',
-    'Goldfinch (non-breeding M or F)',
+    'Goldfinch (breeding Male)',
+    'Goldfinch (non-breeding Male or Female)',
     'No bird detected',  # 3
     'Black-capped chickadee',
     'Blue jay',
-    'Brown-headed cowbird (F)',
-    'Brown-headed cowbird (M)',
+    'Brown-headed cowbird (Female)',
+    'Brown-headed cowbird (Male)',
     'Carolina wren',
     'Common grakle',
     'Downy woodpecker',  # 10
     'Eastern bluebird',
     'Eu starling',
     'Eu starling off-duty Ad',
-    'House finch (M)',
-    'House finch (F)',  # 15
-    'House sparrow (F/Im)',
-    'House sparrow (M)',
+    'House finch (Male)',
+    'House finch (Female)',  # 15
+    'House sparrow (Female or Immature)',
+    'House sparrow (Male)',
     'Mourning dove',
-    'Cardinal (M)',
-    'Cardinal (F)',  # 20
+    'Cardinal (Male)',
+    'Cardinal (Female)',  # 20
     'Northern flicker',
     'Pileated woodpecker',
-    'Red winged blackbird (F/Im)',
-    'Red winged blackbird (M)',
-    'Squirrel >:o',  # 25
+    'Red winged blackbird (Female or Immature)',
+    'Red winged blackbird (Male)',
+    'Squirrel! >:o',  # 25
     'Tufted titmouse',
     'White-breasted nuthatch']  # 27
 
@@ -654,12 +654,13 @@ try:
                     x = int(x)
                     y = int(y)
 
-                    # Add new bounding box to plot
-                    rect = patches.Rectangle((x, y), w, h,
-                                             linewidth=2,
-                                             edgecolor="white",
-                                             facecolor='none')
-                    ax1.add_patch(rect)
+                    if plot_mode_on:
+                        # Add new bounding box to plot
+                        rect = patches.Rectangle((x, y), w, h,
+                                                 linewidth=2,
+                                                 edgecolor="white",
+                                                 facecolor='none')
+                        ax1.add_patch(rect)
 
                     if not doNN:
                         continue
@@ -886,41 +887,7 @@ try:
                     print("E-mail processing done: " + str(dt.total_seconds()))
 
 
-        # Update debug info
-        debug_txt = ""  # Reset debug info text
-        debug_txt = debug_txt + "Loop " + str(loop_count) + "\n"
-        debug_txt = debug_txt + "Frame jumps : " + str(num_frames) + "\n"
-        if motion_detected:
-            debug_txt = debug_txt + "Motion detected" + "\n"
-        else:
-            debug_txt = debug_txt + "No motion" + "\n"
 
-        debug_txt = debug_txt + "Mtn. dtc. time: " + str(np.round(motion_detection_time*1000).astype(np.int)) + ' ms' + "\n"
-        debug_txt = debug_txt + "Model images: " + str(img_count) + "\n"
-        debug_txt = debug_txt + "Mdl. pred. time: " + str(np.round(model_pred_time*1000).astype(np.int)) + ' ms' + "\n"
-        # if motion.is_stagnant:
-        #     debug_txt = debug_txt + "Stagnant BB eliminated" + "\n"
-        # else:
-        #     debug_txt = debug_txt + "BB Ok" + "\n"
-
-        debug_txt = debug_txt + "Frame rate = " + str(frame_rate) + ' fps' + "\n"
-
-        # Add info on motion detection background state
-        # debug_txt = debug_txt + "BG Updated = " + str(motion.updated) + "\n"
-        # debug_txt = debug_txt + "BG Sum = " + str(motion.sum_thresh_bg) + "\n"
-        # debug_txt = debug_txt + "BG Sum main = " + str(motion.sum_thresh_bg_main) + "\n"
-        # Get loop delay
-
-
-        # Finish off debug info
-        dt = datetime.datetime.now() - t
-        delay = np.round(dt.total_seconds()*1000).astype(np.int)
-
-        debug_txt = debug_txt + "Loop time = " + str(delay) + ' ms'
-
-        debug_file = open(stream_folder + "debug_info.txt", "w+")
-        debug_file.write(debug_txt)
-        debug_file.close()
 
         if DEBUG:
             dt = datetime.datetime.now() - t
@@ -953,6 +920,24 @@ try:
             if DEBUG:
                 dt = datetime.datetime.now() - t
                 print("Plotting done: " + str(dt.total_seconds()))
+
+        # Update debug info
+        debug_txt = ""  # Reset debug info text
+        debug_txt = debug_txt + " SYSTEM STATUS *************" + "\n"
+        debug_txt = debug_txt + " * Loop #: " + str(loop_count) + "\n"
+        debug_txt = debug_txt + " * NN skipped frames: " + str(num_frames) + "\n"
+        debug_txt = debug_txt + " * Motion dt: " + str(np.round(motion_detection_time*1000).astype(np.int)) + ' ms' + "\n"
+        debug_txt = debug_txt + " * Model images: " + str(img_count) + "\n"
+        debug_txt = debug_txt + " * Model pred. dt: " + str(np.round(model_pred_time*1000).astype(np.int)) + ' ms' + "\n"
+        debug_txt = debug_txt + " * Source fps: " + str(frame_rate) + "\n"
+
+        dt = datetime.datetime.now() - t
+        delay = np.round(dt.total_seconds()*1000).astype(np.int)
+        debug_txt = debug_txt + " * Total loop time: " + str(delay) + ' ms'
+
+        debug_file = open(stream_folder + "debug_info.txt", "w+")
+        debug_file.write(debug_txt)
+        debug_file.close()
 
         # Inc loop count
         loop_count += 1

@@ -15,9 +15,9 @@ class SingleMotionDetector:
 		self.accumWeight_bg = accumWeight
 
 		# Main BG
-		self.accumWeight_bg_main_initial = 0.7 # 0.45
-		self.accumWeight_bg_main = 0.6  #0.2 0.35
-		self.accumWeight_bg_main_slow = 0.35  #0.07 0.125
+		self.accumWeight_bg_main_initial = 0.75  # 0.45
+		self.accumWeight_bg_main = 0.6  # 0.2 0.35
+		self.accumWeight_bg_main_slow = 0.35  # 0.07 0.125
 
 		# initialize the background model
 		self.bg = None
