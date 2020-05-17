@@ -9,6 +9,7 @@ import cv2
 from scipy.spatial import distance
 from pyimagesearch.motion_detection import singlemotiondetector as smd
 from Tools.Emailing import Emailer
+import BirdStats
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
 import matplotlib
@@ -107,7 +108,7 @@ pretty_names_list = [
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []
 prob_hysteresis_lower = []
-default_higher = 90
+default_higher = 87
 default_difference_to_lower = 10
 for c in range(len(pretty_names_list)):
 
@@ -177,24 +178,28 @@ bird_classes_2D_history = np.zeros((0, num_image_steps[0], num_image_steps[1])).
 # Below var is set to ID_stay_time when a positive ID is made and then "fades" with 1 per cycle.
 # Works as a "low pass filter" to make the displaying of labels less flimsy
 class_detection_flag = np.zeros(len(pretty_names_list), )
+class_detection_flag_previous = np.zeros(len(pretty_names_list), )
 
 # Keep track of number of classifications if each species
 bird_classifications_count = np.zeros(len(pretty_names_list), )
 
-# Initialize data frame
-df = pd.DataFrame(columns=['year',
-                           'month',
-                           'day',
-                           'hour',
-                           'minute',
-                           'second',
-                           'birdID',
-                           'bird_name',
-                           'classification_probability_overall',
-                           'classification_probability_instance',
-                           'loop_cycle',
-                           'bounding_box',
-                           'image_filename'])
+# # Initialize data frame
+# df = pd.DataFrame(columns=['year',
+#                            'month',
+#                            'day',
+#                            'hour',
+#                            'minute',
+#                            'second',
+#                            'microsecond',
+#                            'now',
+#                            'birdID',
+#                            'bird_name',
+#                            'classification_probability_overall',
+#                            'classification_probability_instance',
+#                            'just_detected',
+#                            'loop_cycle',
+#                            'bounding_box',
+#                            'image_filename'])
 
 # Initializing E-mailer
 e_mailer = Emailer()
@@ -211,6 +216,9 @@ last_loop_count = -1
 nuthins_seen = 0
 restart_no = 0
 loop_count = 0
+
+BS = BirdStats.BirdStats()
+
 
 WIN_MODE_FIXED = 0
 WIN_MODE_FLOATING = 1
@@ -247,7 +255,7 @@ try:
                 grab_delay = dT.total_seconds()
                 # print("Grab delay = " + str(grab_delay) + " Thr = " + str(1/(frame_rate+1)))
                 num_frames += 1
-                if num_frames > 50*frame_rate:
+                if num_frames > 10*frame_rate:
                     grab_delay = 1
                     print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + str(T))
 
@@ -264,8 +272,7 @@ try:
 
             print('Frame was None ' + str(datetime.datetime.now()))
 
-            wait_time = 0.01
-            IP = IP_start - 1
+            wait_time = 10
             while frame is None:
 
                 # Let go of capture object
@@ -275,35 +282,27 @@ try:
                 # Inform
                 print(' * Writing label to streaming SW')
                 label_file = open(stream_folder + "label.txt", "w+")
-                label_file.write('< Camera connection issues > \n < Retrying to connect in ' + str(wait_time) + ' seconds >')
+                label_file.write('< Neural network camera connection lost > \n < Retrying to connect ...')
                 label_file.close()
 
                 # print('Trying again in ' + str(wait_time) + ' secs ...')
                 print(' * Trying to connect again ...')
-                time.sleep(wait_time)
 
-                # Increase last 3 IP numbers
-                IP += 1
-                if IP > 105:
-                    IP = int(100)
-
-                # Generate new string
-                IP_address = "192.168.10." + str(IP)
-                # ss = "rtsp://" + username + ":" + password + "@" + IP_address + \
-                #      ":554/cam/realmonitor?channel=" + channel + "&subtype=" + subtype + "&unicast=true&proto=Onvif"
                 ss = "rtsp://admin:JuLian50210809@192.168.0.200:554/Streaming/Channels/101/"
-                # Inform
-                print(' * Retrying with IP = ' + str(IP))
-                label_file = open(stream_folder + "label.txt", "w+")
-                label_file.write('< Retrying camera connection with IP = ' + str(IP) + ' >')
-                label_file.close()
+
+                # # Inform
+                # label_file = open(stream_folder + "label.txt", "w+")
+                # label_file.write('< Retrying camera connection with IP = ' + str(IP) + ' >')
+                # label_file.close()
 
                 # Try again
                 cap = cv2.VideoCapture(ss)
                 ret, frame = cap.read()
 
                 if frame is None:
-                    print(" * Connection unsuccessful ...")
+                    print(" * Connection unsuccessful, trying again in " + str(wait_time) + " seconds ...")
+                    time.sleep(wait_time)
+
 
             else:
                 restart_no += 1
@@ -577,6 +576,7 @@ try:
                                                  'hour': datetime.datetime.now().hour,
                                                  'minute': datetime.datetime.now().minute,
                                                  'second': datetime.datetime.now().second,
+                                                 'microsecond': datetime.datetime.now().microsecond,
                                                  'birdID': c,
                                                  'bird_name': pretty_names_list[c][0],
                                                  'classification_probability': cluster_prop,
@@ -586,7 +586,8 @@ try:
                                                  'image_filename': filename}
 
                                     # Append data to dataframe
-                                    df = df.append(data_dict, ignore_index=True)
+                                    BS.add_data(data_dict)
+                                    # df = df.append(data_dict, ignore_index=True)
 
             elif mode == WIN_MODE_FLOATING:
 
@@ -732,6 +733,9 @@ try:
                         # Check if any class has met detection criteria
                         for c, p in enumerate(pred_probs_floating):
 
+                            # Get the state of the detection
+                            class_detection_flag_previous[c] = class_detection_flag[c]
+
                             if p >= prob_hysteresis_higher[c]:
 
                                 # Tracker for e-mailing system
@@ -766,6 +770,9 @@ try:
                             # Save loop count
                             last_loop_count = loop_count
 
+                            # Set to true if a new detection was just made
+                            just_detected = class_detection_flag_previous[c] < class_detection_flag[c]
+
                             # Save to data frame if detection has been made
                             # Assemble dict of data for data frame
                             data_dict = {'year': datetime.datetime.today().year,
@@ -774,16 +781,20 @@ try:
                                          'hour': datetime.datetime.now().hour,
                                          'minute': datetime.datetime.now().minute,
                                          'second': datetime.datetime.now().second,
+                                         'microsecond': datetime.datetime.now().microsecond,  # datetime.datetime().now().microsecond,
+                                         'now': datetime.datetime.now(),
                                          'birdID': c,
                                          'bird_name': pretty_names_list[c],
                                          'classification_probability_overall': pred_probs_floating[c][0],
                                          'classification_probability_instance': pred_probs[i],
+                                         'just_detected': just_detected,
                                          'loop_cycle': loop_count,
                                          'bounding_box': bounding_boxes[i],
                                          'image_filename': filename}
 
                             # Append data to dataframe
-                            df = df.append(data_dict, ignore_index=True)
+                            BS.add_data(data_dict)
+                            # df = df.append(data_dict, ignore_index=True)
 
         for c in range(len(pred_probs_floating)):
 
@@ -825,16 +836,17 @@ try:
 
             nuthins_seen = 1  # This switch is to ensure to write this ti label file only once if a strech of nothing is going on at the feeder
 
-        # Save dataframe to csv file on disk every 5 minutes
+        # Save dataframe to csv file on disk every 300 loops
         if loop_count % 300 == 0:
             # print("Saving data frame to disk ")
-
-            df_filename = str(datetime.datetime.today().year) + '_' + \
-                          str(datetime.datetime.today().month) + '_' + \
-                          str(datetime.datetime.today().day) + '_' + \
-                          str(current_hour) + '.csv'
-
-            df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
+            BS.save_clock_hour_2_csv(current_hour)
+            #
+            # df_filename = str(datetime.datetime.today().year) + '_' + \
+            #               str(datetime.datetime.today().month) + '_' + \
+            #               str(datetime.datetime.today().day) + '_' + \
+            #               str(current_hour) + '.csv'
+            #
+            # df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
 
             if DEBUG:
                 dt = datetime.datetime.now() - t
@@ -843,28 +855,33 @@ try:
         # Save data frame and create a new if a new hour of the day has started
         if current_hour != datetime.datetime.now().hour:
             print("Saving data frame to disk and create new for next hour")
-            df_filename = str(datetime.datetime.today().year) + '_' + \
-                          str(datetime.datetime.today().month) + '_' + \
-                          str(datetime.datetime.today().day) + '_' + \
-                          str(current_hour) + '.csv'
+            BS.save_clock_hour_2_csv(current_hour)
 
-            # Save current data frame to CSV file
-            df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
-
-            # Create new and empty data frame for next hour
-            df = pd.DataFrame(columns=['year',
-                                       'month',
-                                       'day',
-                                       'hour',
-                                       'minute',
-                                       'second',
-                                       'birdID',
-                                       'bird_name',
-                                       'classification_probability_overall',
-                                       'classification_probability_instance',
-                                       'loop_cycle',
-                                       'bounding_box',
-                                       'image_filename'])
+            # df_filename = str(datetime.datetime.today().year) + '_' + \
+            #               str(datetime.datetime.today().month) + '_' + \
+            #               str(datetime.datetime.today().day) + '_' + \
+            #               str(current_hour) + '.csv'
+            #
+            # # Save current data frame to CSV file
+            # df.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
+            #
+            # # Create new and empty data frame for next hour
+            # df = pd.DataFrame(columns=['year',
+            #                            'month',
+            #                            'day',
+            #                            'hour',
+            #                            'minute',
+            #                            'second',
+            #                            'microsecond',
+            #                            'now',
+            #                            'birdID',
+            #                            'bird_name',
+            #                            'classification_probability_overall',
+            #                            'classification_probability_instance',
+            #                            'just_detected',
+            #                            'loop_cycle',
+            #                            'bounding_box',
+            #                            'image_filename'])
 
             # Update current hour
             current_hour = datetime.datetime.today().hour
@@ -891,9 +908,6 @@ try:
                 if DEBUG:
                     dt = datetime.datetime.now() - t
                     print("E-mail processing done: " + str(dt.total_seconds()))
-
-
-
 
         if DEBUG:
             dt = datetime.datetime.now() - t
@@ -949,7 +963,21 @@ try:
         loop_count += 1
         # print("Line 608, end of loop")
 
+
+except KeyboardInterrupt:
+
+    print("Exiting Electric Birder")
+
+    # Save data
+    BS.save_clock_hour_2_csv(datetime.datetime.today().hour)
+
+    print("Press Ctrl-C to terminate while statement")
+    pass
+
 except:
+
+    # Save data
+    BS.save_clock_hour_2_csv(datetime.datetime.today().hour)
 
     print("SHIT!!!")
     raise
