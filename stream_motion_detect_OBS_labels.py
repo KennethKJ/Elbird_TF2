@@ -24,7 +24,7 @@ doAVI = False
 plot_mode_on = False
 DEBUG = False
 
-minimum_prob = 0  # The minimum probability for selection
+minimum_prob = 50  # The minimum probability for selection
 main_prob_criteria = 90  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
 ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID panel
@@ -176,7 +176,7 @@ bird_classes_2D_history = np.zeros((0, num_image_steps[0], num_image_steps[1])).
 
 # Below var is set to ID_stay_time when a positive ID is made and then "fades" with 1 per cycle.
 # Works as a "low pass filter" to make the displaying of labels less flimsy
-birds_seen_lately = np.zeros(len(pretty_names_list), )
+class_detection_flag = np.zeros(len(pretty_names_list), )
 
 # Keep track of number of classifications if each species
 bird_classifications_count = np.zeros(len(pretty_names_list), )
@@ -536,7 +536,7 @@ try:
                                     bird_classifications_count[c] += 1
 
                                     # Raise the detected flag!
-                                    birds_seen_lately[c] = ID_stay_time
+                                    class_detection_flag[c] = ID_stay_time
 
                                     # Calculate position of detected birdie
                                     x_min = step_size[1] * np.min(C_array[:, 2])
@@ -714,54 +714,59 @@ try:
                     pred_probs = pred_probs[bird_classes != 3]
                     bird_classes = bird_classes[bird_classes != 3]
 
-                    # Cycle through each classification and update filter
-                    for i, c in enumerate(bird_classes):
+                    # Remove classifications below minimum
+                    bird_classes = bird_classes[pred_probs > minimum_prob]
+                    pred_probs = pred_probs[pred_probs > minimum_prob]
 
-                        if pred_probs[i] > pred_probs_floating[c][0]:
+                    if len(bird_classes) > 0:
+
+                        # Cycle through each classification and update filter
+                        for i, c in enumerate(bird_classes):
+
+                            # if pred_probs[i] > pred_probs_floating[c][0]:
 
                             # One pole filter
                             pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
                                 (1-alpha_detect) * pred_probs_floating[c][0]
 
-                    for c, p in enumerate(pred_probs_floating):
+                        # Check if any class has met detection criteria
+                        for c, p in enumerate(pred_probs_floating):
 
-                        if p >= prob_hysteresis_higher[c]:
+                            if p >= prob_hysteresis_higher[c]:
 
-                            # Tracker for e-mailing system
-                            bird_classifications_count[c] = 1
+                                # Tracker for e-mailing system
+                                bird_classifications_count[c] = 1
 
-                            birds_seen_lately[c] = 1
+                                class_detection_flag[c] = 1
 
+                        # Cycle through each classification again for data saving
+                        filename = ''
+                        for i, c in enumerate(bird_classes):
 
+                            # Save frame to image file (if this is a new frame/loop)
+                            if loop_count != last_loop_count and images_saved[c][0] < 200:
 
-                    # Cycle through each classification again for data saving
-                    filename = ''
-                    for i, c in enumerate(bird_classes):
+                                # Update counter (to make sure a max of x images are saved for a given species)
+                                images_saved[c][0] += 1
 
-                        # Save frame to image file (if this is a new frame/loop and anything was classified)
-                        if loop_count != last_loop_count and birds_seen_lately[c] and  pred_probs[i] > 80 and images_saved[c][0] < 100:
+                                # Generate filename for saving image
+                                filename = str(datetime.datetime.today().year) + '_' + \
+                                           str(datetime.datetime.today().month) + '_' + \
+                                           str(datetime.datetime.today().day) + '_' + \
+                                           str(datetime.datetime.now().hour) + '_' + \
+                                           str(datetime.datetime.now().minute) + '_' + \
+                                           str(datetime.datetime.now().second) + '_' + \
+                                           str(datetime.datetime.now().microsecond) + '_' + \
+                                           'loop_' + str(loop_count) + \
+                                           '.jpg'
 
-                            images_saved[c][0] += 1
+                                # Save frame to image
+                                cv2.imwrite(image_capture_folder + filename, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-                            # Generate filename for saving image
-                            filename = str(datetime.datetime.today().year) + '_' + \
-                                       str(datetime.datetime.today().month) + '_' + \
-                                       str(datetime.datetime.today().day) + '_' + \
-                                       str(datetime.datetime.now().hour) + '_' + \
-                                       str(datetime.datetime.now().minute) + '_' + \
-                                       str(datetime.datetime.now().second) + '_' + \
-                                       str(datetime.datetime.now().microsecond) + '_' + \
-                                       'loop_' + str(loop_count) + \
-                                       '.jpg'
+                            # Save loop count
+                            last_loop_count = loop_count
 
-                            # Save frame to image
-                            cv2.imwrite(image_capture_folder + filename, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
-                        # Save loop count
-                        last_loop_count = loop_count
-
-                        # Save to data frame if detection has been made
-                        if birds_seen_lately[c] and pred_probs[i] > 70:
+                            # Save to data frame if detection has been made
                             # Assemble dict of data for data frame
                             data_dict = {'year': datetime.datetime.today().year,
                                          'month': datetime.datetime.today().month,
@@ -783,19 +788,20 @@ try:
         for c in range(len(pred_probs_floating)):
 
             # Apply decay
-            pred_probs_floating[c][0] = alpha_decay * minimum_prob + \
+            pred_probs_floating[c][0] = alpha_decay * 0 + \
                                         (1 - alpha_decay) * pred_probs_floating[c][0]
 
+            # Check if class probability is below lower hysteresis threshold
             if pred_probs_floating[c][0] < prob_hysteresis_lower[c]:
 
-                 birds_seen_lately[c] = 0
+                 class_detection_flag[c] = 0
 
 
         # Create label file for OBS
         label_txt = ''
-        if np.sum(birds_seen_lately) > 0:
+        if np.sum(class_detection_flag) > 0:
 
-            for c, yes in enumerate(birds_seen_lately):
+            for c, yes in enumerate(class_detection_flag):
 
                 # # Subtract one to "forget" some over each cycle
                 # if birds_seen_lately[c] > 0:
