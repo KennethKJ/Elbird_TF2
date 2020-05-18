@@ -26,7 +26,7 @@ plot_mode_on = False
 DEBUG = False
 
 minimum_prob = 50  # The minimum probability for selection
-main_prob_criteria = 90  # Main criteria for a final classsification (mean of num_classifications)
+main_prob_criteria = 85  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
 ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID panel
 num_cycles_in_history = 3  # Number of cycles in history
@@ -108,7 +108,7 @@ pretty_names_list = [
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []
 prob_hysteresis_lower = []
-default_higher = 87
+default_higher = main_prob_criteria
 default_difference_to_lower = 10
 for c in range(len(pretty_names_list)):
 
@@ -840,6 +840,7 @@ try:
         if loop_count % 300 == 0:
             # print("Saving data frame to disk ")
             BS.save_clock_hour_2_csv(current_hour)
+            BS.birds_seen_today()
             #
             # df_filename = str(datetime.datetime.today().year) + '_' + \
             #               str(datetime.datetime.today().month) + '_' + \

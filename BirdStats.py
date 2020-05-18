@@ -5,22 +5,24 @@ import glob
 
 class BirdStats:
 
-    def __init__(self, data_dir="E:\\Electric Bird Caster\\Data\\", DEBUG = False):
+    def __init__(self, stream_folder="E:\\Electric Bird Caster\\", date=None, DEBUG = False):
 
         # copy data directory to class
-        self.data_dir = data_dir
+        self.stream_folder = stream_folder
+        self.data_dir = self.stream_folder + "Data\\"
+        self.image_dir = self.stream_folder + "Captured Images\\"
+
         self.DEBUG = DEBUG
-        # Grab data from files from todays date
-        todays_date = str(dt.datetime.today().date())
+        stream_folder = "E:\\Electric Bird Caster\\"
 
-        todays_date = todays_date.replace('-', '_')
+        if date is None:
+            # Grab data from files from todays date
+            date = str(dt.datetime.today().date())
+            date = date.replace('-', '_')
 
-        if self.DEBUG:
-            todays_date = '2020_5_16'
+        data_files = glob.glob(self.data_dir + date + '*csv')
 
-        todays_files = glob.glob(self.data_dir + todays_date + '*csv')
-
-        if todays_files == []:
+        if data_files == []:
 
             # If no data exist from today, create new and empty df instance
             self. df = pd.DataFrame(columns=['year',
@@ -43,7 +45,7 @@ class BirdStats:
 
             li = []
 
-            for filename in todays_files:
+            for filename in data_files:
                 df_tmp = pd.read_csv(filename, index_col=None, header=0)
                 li.append(df_tmp)
 
@@ -59,10 +61,24 @@ class BirdStats:
 
     def get_basic_stats(self):
 
-        self.birds_seen_today = self.df['bird_name'].unique()
+
+        df_detected = self.df[self.df['just_detected'] == True]
+        self.birds_seen_today = df_detected['bird_name'].unique()
+
+        birds_seen_today_file = open(self.stream_folder + "birds_seen_today.txt", "w+")
+
+        birds_seen_today_txt = ""  # Reset debug info text
+        birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY *************" + "\n"
+        for bird in self.birds_seen_today:
+            birds_seen_today_txt = birds_seen_today_txt + bird + "\n"
 
 
-        now = dt.datetime.now()
+        birds_seen_today_file.write(birds_seen_today_txt)
+        birds_seen_today_file.close()
+        # self.birds_seen_today = self.df['bird_name'].unique()
+
+
+        # now = dt.datetime.now()
 
 
 
@@ -98,47 +114,14 @@ class BirdStats:
                                    'bounding_box',
                                    'image_filename'])
 
-        # Update current hour
 
-# BS = BirdStats(DEBUG=True)
-#
+BS = BirdStats(date="2020_5_17", DEBUG=True)
+
 # BS.save_clock_hour_2_csv(18)
-#
-# print("Done")
-#
+
+print("Done")
 
 
 
 
 
-#
-# import pandas as pd
-# import glob
-#
-# class BirdStats:
-#
-# 	def __init__(self, data_dir = "E:\\Electric Bird Caster\\Data\\"):
-#
-#         self.data_dir = data_dir
-# data_dir = "E:\\Electric Bird Caster\\Data\\"
-#
-# todays_files = glob.glob(self.data_dir + '2020_5_16_*csv')
-#
-#
-# li = []
-#
-# for filename in todays_files:
-#     df_tmp = pd.read_csv(filename, index_col=None, header=0)
-#     li.append(df_tmp)
-#
-# df = pd.concat(li, axis=0, ignore_index=True)
-#
-# birds_seen_today = df['bird_name'].unique()
-#
-#
-#
-#
-# # df = pd.read_csv(data_dir + "2020_5_16_$$.csv")
-#
-#
-# print('Done')
