@@ -218,7 +218,7 @@ restart_no = 0
 loop_count = 0
 
 BS = BirdStats.BirdStats()
-
+# BS.get_basic_stats()
 
 WIN_MODE_FIXED = 0
 WIN_MODE_FLOATING = 1
@@ -840,7 +840,7 @@ try:
         if loop_count % 300 == 0:
             # print("Saving data frame to disk ")
             BS.save_clock_hour_2_csv(current_hour)
-            BS.birds_seen_today()
+            BS.get_basic_stats()
             #
             # df_filename = str(datetime.datetime.today().year) + '_' + \
             #               str(datetime.datetime.today().month) + '_' + \

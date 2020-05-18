@@ -1,11 +1,12 @@
 import datetime as dt
 import pandas as pd
 import glob
+import numpy as np
 
 
 class BirdStats:
 
-    def __init__(self, stream_folder="E:\\Electric Bird Caster\\", date=None, DEBUG = False):
+    def __init__(self, stream_folder="E:\\Electric Bird Caster\\", date=None, DEBUG=False):
 
         # copy data directory to class
         self.stream_folder = stream_folder
@@ -13,12 +14,13 @@ class BirdStats:
         self.image_dir = self.stream_folder + "Captured Images\\"
 
         self.DEBUG = DEBUG
-        stream_folder = "E:\\Electric Bird Caster\\"
+        # stream_folder = "E:\\Electric Bird Caster\\"
 
         if date is None:
             # Grab data from files from todays date
-            date = str(dt.datetime.today().date())
-            date = date.replace('-', '_')
+            date = str(dt.datetime.today().year) + '_' + \
+                          str(dt.datetime.today().month) + '_' + \
+                          str(dt.datetime.today().day)
 
         data_files = glob.glob(self.data_dir + date + '*csv')
 
@@ -44,41 +46,37 @@ class BirdStats:
         else:
 
             li = []
-
             for filename in data_files:
                 df_tmp = pd.read_csv(filename, index_col=None, header=0)
                 li.append(df_tmp)
-
             self.df = pd.concat(li, axis=0, ignore_index=True)
 
             self.get_basic_stats()
-
 
     def add_data(self, data_dict):
 
         self.df = self.df.append(data_dict, ignore_index=True)
 
-
     def get_basic_stats(self):
-
 
         df_detected = self.df[self.df['just_detected'] == True]
         self.birds_seen_today = df_detected['bird_name'].unique()
-
+        self.birds_seen_today = np.sort(self.birds_seen_today)
         birds_seen_today_file = open(self.stream_folder + "birds_seen_today.txt", "w+")
-
         birds_seen_today_txt = ""  # Reset debug info text
-        birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY *************" + "\n"
-        for bird in self.birds_seen_today:
-            birds_seen_today_txt = birds_seen_today_txt + bird + "\n"
+        birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY (" + str(dt.datetime.today().date()) + ") ******" + "\n"
 
+        if len(self.birds_seen_today) < 1:
+
+            birds_seen_today_txt = birds_seen_today_txt + " None yet ..." + "\n"
+
+        else:
+
+            for bird in self.birds_seen_today:
+                birds_seen_today_txt = birds_seen_today_txt + " - " + bird + "\n"
 
         birds_seen_today_file.write(birds_seen_today_txt)
         birds_seen_today_file.close()
-        # self.birds_seen_today = self.df['bird_name'].unique()
-
-
-        # now = dt.datetime.now()
 
 
 
@@ -115,11 +113,11 @@ class BirdStats:
                                    'image_filename'])
 
 
-BS = BirdStats(date="2020_5_17", DEBUG=True)
+# BS = BirdStats(date="2020_5_17", DEBUG=True)
 
 # BS.save_clock_hour_2_csv(18)
 
-print("Done")
+# print("Done")
 
 
 
