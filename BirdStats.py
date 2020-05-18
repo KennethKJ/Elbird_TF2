@@ -61,7 +61,6 @@ class BirdStats:
 
     def get_basic_stats(self):
 
-
         df_detected = self.df[self.df['just_detected'] == True]
         self.birds_seen_today = df_detected['bird_name'].unique()
 
@@ -70,8 +69,8 @@ class BirdStats:
         birds_seen_today_txt = ""  # Reset debug info text
         birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY *************" + "\n"
         for bird in self.birds_seen_today:
-            birds_seen_today_txt = birds_seen_today_txt + bird + "\n"
-
+            num_detections = len(df_detected[df_detected['bird_name'] == bird])
+            birds_seen_today_txt = birds_seen_today_txt + bird + " (" + str(num_detections) + ")" + "\n"
 
         birds_seen_today_file.write(birds_seen_today_txt)
         birds_seen_today_file.close()
@@ -114,12 +113,12 @@ class BirdStats:
                                    'bounding_box',
                                    'image_filename'])
 
-
-BS = BirdStats(date="2020_5_17", DEBUG=True)
-
-# BS.save_clock_hour_2_csv(18)
-
-print("Done")
+#
+# BS = BirdStats(date="2020_5_17", DEBUG=True)
+#
+# # BS.save_clock_hour_2_csv(18)
+#
+# print("Done")
 
 
 
