@@ -60,6 +60,7 @@ class BirdStats:
     def get_basic_stats(self):
 
         df_detected = self.df[self.df['just_detected'] == True]
+
         self.birds_seen_today = df_detected['bird_name'].unique()
         self.birds_seen_today = np.sort(self.birds_seen_today)
         birds_seen_today_file = open(self.stream_folder + "birds_seen_today.txt", "w+")
@@ -68,17 +69,18 @@ class BirdStats:
 
         if len(self.birds_seen_today) < 1:
 
+            birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY *************" + "\n"
             birds_seen_today_txt = birds_seen_today_txt + " None yet ..." + "\n"
 
         else:
 
             for bird in self.birds_seen_today:
-                birds_seen_today_txt = birds_seen_today_txt + " - " + bird + "\n"
+                bird_df = df_detected[df_detected['bird_name'] == bird]
+                num_detections = len(bird_df)
+                birds_seen_today_txt = birds_seen_today_txt + bird + " (" + str(num_detections) + ")" + "\n"
 
         birds_seen_today_file.write(birds_seen_today_txt)
         birds_seen_today_file.close()
-
-
 
         # self.birds_seen_last_10_mins
 
@@ -111,15 +113,6 @@ class BirdStats:
                                    'loop_cycle',
                                    'bounding_box',
                                    'image_filename'])
-
-
-# BS = BirdStats(date="2020_5_17", DEBUG=True)
-
-# BS.save_clock_hour_2_csv(18)
-
-# print("Done")
-
-
 
 
 

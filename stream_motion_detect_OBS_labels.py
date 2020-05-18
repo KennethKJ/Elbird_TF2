@@ -22,7 +22,7 @@ print("Running Electric Birder")
 # Misc 00000
 doNN = True
 doAVI = False
-plot_mode_on = False
+plot_mode_on = True
 DEBUG = False
 
 minimum_prob = 50  # The minimum probability for selection
@@ -336,9 +336,15 @@ try:
         frame_bw = cv2.cvtColor(frame.copy(), cv2.COLOR_RGB2GRAY)
 
         # Reduce size to save time on processing
-        frame_bw = cv2.resize(frame_bw, dsize=((int(frame_width/2), int(frame_height/2))), interpolation=cv2.INTER_CUBIC)
+        reduction_factor = 2
+        frame_bw = cv2.resize(frame_bw, dsize=((int(frame_width/reduction_factor), int(frame_height/reduction_factor))), interpolation=cv2.INTER_CUBIC)
 
         th, bounding_boxes = motion.detect(frame_bw)
+
+        if bounding_boxes is not None:  # Motion is detected
+
+            for i in range(len(bounding_boxes)):
+                bounding_boxes[i] *= reduction_factor
 
         dmt = datetime.datetime.now() - mt
         motion_detection_time = dmt.total_seconds()
@@ -598,12 +604,6 @@ try:
 
                     # Unpack the single bounding box
                     x, y, w, h = bb
-
-                    # Restore actual size from the motion detection image size reduction
-                    x *= 2
-                    y *= 2
-                    w *= 2
-                    h *= 2
 
                     if plot_mode_on:
                         rect = patches.Rectangle((x, y), w, h,
