@@ -22,7 +22,7 @@ print("Running Electric Birder")
 # Misc 00000
 doNN = True
 doAVI = False
-plot_mode_on = True
+plot_mode_on = False
 DEBUG = False
 
 minimum_prob = 50  # The minimum probability for selection
@@ -748,7 +748,8 @@ try:
                         for i, c in enumerate(bird_classes):
 
                             # Save frame to image file (if this is a new frame/loop)
-                            if loop_count != last_loop_count and images_saved[c][0] < 200:
+                            if loop_count != last_loop_count:
+                                #  and images_saved[c][0] < 200:
 
                                 # Update counter (to make sure a max of x images are saved for a given species)
                                 images_saved[c][0] += 1
@@ -919,12 +920,12 @@ try:
             ax1.set_title(str(datetime.datetime.now()))
 
             props = dict(boxstyle='round', facecolor='white', alpha=0.8)
-            ax1.text(10,
-                     10,
-                     debug_txt,
-                     fontsize=12,
-                     verticalalignment='top',
-                     bbox=props)
+            # ax1.text(10,
+            #          10,
+            #          debug_txt,
+            #          fontsize=12,
+            #          verticalalignment='top',
+            #          bbox=props)
 
             ax1.text(frame_width - 400,
                      10,

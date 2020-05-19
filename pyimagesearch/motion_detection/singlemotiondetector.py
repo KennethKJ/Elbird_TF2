@@ -148,9 +148,9 @@ class SingleMotionDetector:
 
 			C = []
 			C_small = []
-			thr_big = 5000
+			thr_big = 3000
 			thr_too_big = 30000
-			thr_small = 500
+			thr_small = 200
 			# print("Contour areas: ")
 			for cnt in cnts:
 				# print(cv2.contourArea(cnt))
