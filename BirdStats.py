@@ -69,7 +69,6 @@ class BirdStats:
 
         if len(self.birds_seen_today) < 1:
 
-            birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY *************" + "\n"
             birds_seen_today_txt = birds_seen_today_txt + " None yet ..." + "\n"
 
         else:
@@ -95,24 +94,3 @@ class BirdStats:
 
         # Save data from selected hour to CSV file
         df_tmp.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
-
-        # Create new and empty data frame for next hour
-        df = pd.DataFrame(columns=['year',
-                                   'month',
-                                   'day',
-                                   'hour',
-                                   'minute',
-                                   'second',
-                                   'microsecond',
-                                   'now',
-                                   'birdID',
-                                   'bird_name',
-                                   'classification_probability_overall',
-                                   'classification_probability_instance',
-                                   'just_detected',
-                                   'loop_cycle',
-                                   'bounding_box',
-                                   'image_filename'])
-
-
-

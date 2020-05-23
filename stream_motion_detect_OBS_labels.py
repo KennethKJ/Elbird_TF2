@@ -10,6 +10,7 @@ from scipy.spatial import distance
 from pyimagesearch.motion_detection import singlemotiondetector as smd
 from Tools.Emailing import Emailer
 import BirdStats
+import SysStats
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
 import matplotlib
@@ -25,7 +26,7 @@ doAVI = False
 plot_mode_on = False
 DEBUG = False
 
-minimum_prob = 50  # The minimum probability for selection
+minimum_prob = 0  # The minimum probability for selection
 main_prob_criteria = 85  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
 ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID panel
@@ -219,6 +220,8 @@ loop_count = 0
 
 BS = BirdStats.BirdStats()
 # BS.get_basic_stats()
+
+sys_data = SysStats.SysStats()
 
 WIN_MODE_FIXED = 0
 WIN_MODE_FLOATING = 1
@@ -724,11 +727,11 @@ try:
                         # Cycle through each classification and update filter
                         for i, c in enumerate(bird_classes):
 
-                            # if pred_probs[i] > pred_probs_floating[c][0]:
+                            if pred_probs[i] > pred_probs_floating[c][0]:
 
-                            # One pole filter
-                            pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
-                                (1-alpha_detect) * pred_probs_floating[c][0]
+                                # One pole filter
+                                pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
+                                    (1-alpha_detect) * pred_probs_floating[c][0]
 
                         # Check if any class has met detection criteria
                         for c, p in enumerate(pred_probs_floating):
@@ -820,9 +823,9 @@ try:
                 #     birds_seen_lately[c] -= 1
 
                 if yes:
-                    # running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
-                    # label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
-                    label_txt = label_txt + pretty_names_list[c] + "\n"
+                    running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
+                    label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
+                    # label_txt = label_txt + pretty_names_list[c] + "\n"
                     nuthins_seen = 0
 
             label_file = open(stream_folder + "label.txt", "w+")
@@ -837,11 +840,30 @@ try:
 
             nuthins_seen = 1  # This switch is to ensure to write this ti label file only once if a strech of nothing is going on at the feeder
 
+        # Create prop file for OBS
+        prob_txt = ''
+        for c, p in enumerate(pred_probs_floating):
+            p_str = str(np.around(np.squeeze(p), decimals=1))
+
+            num_spaces_to_add = 5 - len(p_str)
+            for i in range(num_spaces_to_add):
+                p_str = " " + p_str
+
+            prob_txt = prob_txt + "  * " + p_str + "% - " + pretty_names_list[c] + "\n"
+
+        prob_txt_file = open(stream_folder + "probs.txt", "w+")
+        prob_txt_file.write(prob_txt)
+        prob_txt_file.close()
+
+        sys_data.add_data(pred_probs_floating, loop_count)
+
         # Save dataframe to csv file on disk every 300 loops
         if loop_count % 300 == 0:
             # print("Saving data frame to disk ")
             BS.save_clock_hour_2_csv(current_hour)
             BS.get_basic_stats()
+
+            sys_data.save_clock_hour_2_csv(current_hour)
             #
             # df_filename = str(datetime.datetime.today().year) + '_' + \
             #               str(datetime.datetime.today().month) + '_' + \
