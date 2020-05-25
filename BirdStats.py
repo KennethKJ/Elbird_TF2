@@ -75,8 +75,14 @@ class BirdStats:
         else:
 
             for bird in self.birds_seen_today:
+
+                # Get all data for the bird
                 bird_df = df_detected[df_detected['bird_name'] == bird]
-                num_detections = len(bird_df)
+
+                # Count single detection events
+                num_detections = len(bird_df['loop_cycle'].unique())
+
+                # Add entry to text
                 birds_seen_today_txt = birds_seen_today_txt + bird + " (" + str(num_detections) + ")" + "\n"
 
         birds_seen_today_file.write(birds_seen_today_txt)
