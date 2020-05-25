@@ -41,6 +41,7 @@ class BirdStats:
                                              'classification_probability_instance',
                                              'just_detected',
                                              'loop_cycle',
+                                             'ML_loop',
                                              'bounding_box',
                                              'image_filename'])
         else:
