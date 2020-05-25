@@ -723,12 +723,17 @@ try:
                     bird_classification_instances = bird_classification_instances[pred_probs_instance > minimum_prob]
                     pred_probs_instance = pred_probs_instance[pred_probs_instance > minimum_prob]
 
-                    filename = ''
+                    # Make a caopy for data tracking
+                    pred_probs_smoothed_prev = pred_probs_smoothed.copy()
 
+                    filename = ''
                     if len(bird_classification_instances) > 0:
 
                         # Cycle through each classification and update filter
                         for i, c in enumerate(bird_classification_instances):
+
+                            # Make a copy of value before updating
+                            pred_probs_smoothed_prev[c][0] = pred_probs_smoothed[c][0]
 
                             if pred_probs_instance[i] > pred_probs_smoothed[c][0]:
 
@@ -802,8 +807,9 @@ try:
                                          'now': datetime.datetime.now(),
                                          'birdID': c,
                                          'bird_name': pretty_names_list[c],
-                                         'classification_probability_overall': pred_probs_smoothed[c][0],
-                                         'classification_probability_instance': pred_probs_instance[i],
+                                         'instance_prob': pred_probs_instance[i],
+                                         'smoothed_prob_prev': pred_probs_smoothed_prev[c][0],
+                                         'smoothed_prob': pred_probs_smoothed[c][0],
                                          'just_detected': just_detected,
                                          'loop_cycle': loop_count,
                                          'ML_loop': ML_loop,
