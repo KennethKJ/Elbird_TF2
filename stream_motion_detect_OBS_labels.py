@@ -723,6 +723,8 @@ try:
                     bird_classes = bird_classes[pred_probs > minimum_prob]
                     pred_probs = pred_probs[pred_probs > minimum_prob]
 
+                    filename = ''
+
                     if len(bird_classes) > 0:
 
                         # Cycle through each classification and update filter
@@ -734,9 +736,6 @@ try:
                                 pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
                                     (1-alpha_detect) * pred_probs_floating[c][0]
 
-                        # Check if any class has met detection criteria
-                        for c, p in enumerate(pred_probs_floating):
-
                             # Get the state of the detection
                             class_detection_flag_previous[c] = class_detection_flag[c]
 
@@ -747,9 +746,22 @@ try:
 
                                 class_detection_flag[c] = 1
 
+
+                        # Check if any class has met detection criteria
+                        # for c, p in enumerate(pred_probs_floating):
+
+                            # # Get the state of the detection
+                            # class_detection_flag_previous[c] = class_detection_flag[c]
+                            #
+                            # if p >= prob_hysteresis_higher[c]:
+                            #
+                            #     # Tracker for e-mailing system
+                            #     bird_classifications_count[c] = 1
+                            #
+                            #     class_detection_flag[c] = 1
+
                         # Cycle through each classification again for data saving
-                        filename = ''
-                        for i, c in enumerate(bird_classes):
+                        # for i, c in enumerate(bird_classes):
 
                             # Save frame to image file (if this is a new frame/loop)
                             if loop_count != last_loop_count:
