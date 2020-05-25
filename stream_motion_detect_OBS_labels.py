@@ -228,7 +228,7 @@ WIN_MODE_FLOATING = 1
 mode = WIN_MODE_FLOATING
 
 if mode == WIN_MODE_FLOATING:
-    pred_probs_floating = np.zeros((len(pretty_names_list), 1))
+    pred_probs_smoothed = np.zeros((len(pretty_names_list), 1))
     images_saved = np.zeros((len(pretty_names_list), 1))
 
 ML_loop = 0
@@ -710,36 +710,36 @@ try:
                         print("Model predictions done: " + str(dt.total_seconds()))
 
                     # Get index of classified birds/animals
-                    bird_classes = np.argmax(pred, axis=1)
+                    bird_classification_instances = np.argmax(pred, axis=1)
 
                     # Get maxima of props and convert to %
-                    pred_probs = np.max(pred, axis=1) * 100
+                    pred_probs_instance = np.max(pred, axis=1) * 100
 
                     # Remove background classifications
-                    pred_probs = pred_probs[bird_classes != 3]
-                    bird_classes = bird_classes[bird_classes != 3]
+                    pred_probs_instance = pred_probs_instance[bird_classification_instances != 3]
+                    bird_classification_instances = bird_classification_instances[bird_classification_instances != 3]
 
                     # Remove classifications below minimum
-                    bird_classes = bird_classes[pred_probs > minimum_prob]
-                    pred_probs = pred_probs[pred_probs > minimum_prob]
+                    bird_classification_instances = bird_classification_instances[pred_probs_instance > minimum_prob]
+                    pred_probs_instance = pred_probs_instance[pred_probs_instance > minimum_prob]
 
                     filename = ''
 
-                    if len(bird_classes) > 0:
+                    if len(bird_classification_instances) > 0:
 
                         # Cycle through each classification and update filter
-                        for i, c in enumerate(bird_classes):
+                        for i, c in enumerate(bird_classification_instances):
 
-                            if pred_probs[i] > pred_probs_floating[c][0]:
+                            if pred_probs_instance[i] > pred_probs_smoothed[c][0]:
 
                                 # One pole filter
-                                pred_probs_floating[c][0] = alpha_detect * pred_probs[i] + \
-                                    (1-alpha_detect) * pred_probs_floating[c][0]
+                                pred_probs_smoothed[c][0] = alpha_detect * pred_probs_instance[i] + \
+                                                            (1-alpha_detect) * pred_probs_smoothed[c][0]
 
                             # Get the state of the detection
                             class_detection_flag_previous[c] = class_detection_flag[c]
 
-                            if p >= prob_hysteresis_higher[c]:
+                            if pred_probs_smoothed[c][0] >= prob_hysteresis_higher[c]:
 
                                 # Tracker for e-mailing system
                                 bird_classifications_count[c] = 1
@@ -802,8 +802,8 @@ try:
                                          'now': datetime.datetime.now(),
                                          'birdID': c,
                                          'bird_name': pretty_names_list[c],
-                                         'classification_probability_overall': pred_probs_floating[c][0],
-                                         'classification_probability_instance': pred_probs[i],
+                                         'classification_probability_overall': pred_probs_smoothed[c][0],
+                                         'classification_probability_instance': pred_probs_instance[i],
                                          'just_detected': just_detected,
                                          'loop_cycle': loop_count,
                                          'ML_loop': ML_loop,
@@ -815,16 +815,7 @@ try:
                             # df = df.append(data_dict, ignore_index=True)
                     ML_loop += 1
 
-        for c in range(len(pred_probs_floating)):
 
-            # Apply decay
-            pred_probs_floating[c][0] = alpha_decay * 0 + \
-                                        (1 - alpha_decay) * pred_probs_floating[c][0]
-
-            # Check if class probability is below lower hysteresis threshold
-            if pred_probs_floating[c][0] < prob_hysteresis_lower[c]:
-
-                 class_detection_flag[c] = 0
 
 
         # Create label file for OBS
@@ -838,7 +829,7 @@ try:
                 #     birds_seen_lately[c] -= 1
 
                 if yes:
-                    running_prob = str(np.around(pred_probs_floating[c][0], decimals=1))
+                    running_prob = str(np.around(pred_probs_smoothed[c][0], decimals=1))
                     label_txt = label_txt + pretty_names_list[c] + " - (" + running_prob + "%)" + "\n"
                     # label_txt = label_txt + pretty_names_list[c] + "\n"
                     nuthins_seen = 0
@@ -857,7 +848,7 @@ try:
 
         # Create prop file for OBS
         prob_txt = ''
-        for c, p in enumerate(pred_probs_floating):
+        for c, p in enumerate(pred_probs_smoothed):
             p_str = str(np.around(np.squeeze(p), decimals=1))
 
             num_spaces_to_add = 5 - len(p_str)
@@ -870,7 +861,19 @@ try:
         prob_txt_file.write(prob_txt)
         prob_txt_file.close()
 
-        sys_data.add_data(pred_probs_floating, loop_count)
+        sys_data.add_data(pred_probs_smoothed, loop_count)
+
+        # Apply global probability decay after everything has been updated
+        for c in range(len(pred_probs_smoothed)):
+
+            # Apply decay
+            pred_probs_smoothed[c][0] = alpha_decay * 0 + \
+                                        (1 - alpha_decay) * pred_probs_smoothed[c][0]
+
+            # Check if class probability is below lower hysteresis threshold
+            if pred_probs_smoothed[c][0] < prob_hysteresis_lower[c]:
+
+                 class_detection_flag[c] = 0
 
         # Save dataframe to csv file on disk every 300 loops
         if loop_count % 300 == 0:
