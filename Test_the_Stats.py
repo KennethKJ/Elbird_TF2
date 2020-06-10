@@ -3,7 +3,7 @@ import glob
 import BirdStats
 
 
-BS = BirdStats.BirdStats()
+BS = BirdStats.BirdStats(date="2020_5_27")
 
 
 
