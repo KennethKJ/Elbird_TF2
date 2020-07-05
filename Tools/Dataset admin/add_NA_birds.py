@@ -11,17 +11,15 @@ dB_filename = "dB of all bird images from all datasets.csv"
 
 image_folder = "E:\\ML Training Data\\(2) Bird Photo Booth Users Group_files\\"
 
-df_filename = 'dB of all bird images from all datasets 2' + '.csv'
+df_filename = 'dB of all bird images from all datasets 3' + '.csv'
 
 # Load data into data frames
 image_db = pd.read_csv(dB_location + dB_filename, index_col=None, header=0)
 df_map = pd.read_csv(dB_location + "Folder2commonNameMap.csv", index_col=None, header=0)
 
-for b in range(5, len(df_map['Common name'])):
+for b in range(1, len(df_map['Common name'])):
 
-    image_db.to_csv(r'E:\ML Training Data\\' + df_filename, index=False)
-
-    print("Working on " + df_map['Common name'][b] + "(" + str(b) + ")")
+    print(str(b) + ": Working on " + df_map['Common name'][b])
 
     current_folder = image_folder + df_map['Birds_dB name'][b] + "\\"
 
@@ -59,10 +57,10 @@ for b in range(5, len(df_map['Common name'])):
         try:
 
             # Try to read image to ensure it exists and can be read
-            image = Image.open(imf)
+            # image = Image.open(imf)
 
             path, fn = os.path.split(imf)
-            print(fn)
+            # print(fn)
 
             data_dict = {'Common name': common_name,
                          'Scientific Name': scientific_name,
@@ -88,3 +86,4 @@ for b in range(5, len(df_map['Common name'])):
             print("Something's bad wrong!")
             raise
 
+image_db.to_csv(r'E:\ML Training Data\\' + df_filename, index=False)

@@ -68,43 +68,52 @@ debug_file.write('System start up \n')
 debug_file.write('Please wait ... ' + "\n")
 debug_file.close()
 
+useNewNN = True
+
 if doNN:
     print("Loading model ... ")
-    model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+    if not useNewNN:
+        model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+
+        pretty_names_list = [
+            'Crow',
+            'Goldfinch (breeding Male)',
+            'Goldfinch (non-breeding Male or Female)',
+            'No bird detected',  # 3
+            'Black-capped chickadee',
+            'Blue jay',
+            'Brown-headed cowbird (Female)',
+            'Brown-headed cowbird (Male)',
+            'Carolina wren',
+            'Common grakle',
+            'Downy woodpecker',  # 10
+            'Eastern bluebird',
+            'Eu starling',
+            'Eu starling off-duty Ad',
+            'House finch (Male)',
+            'House finch (Female)',  # 15
+            'House sparrow (Female or Immature)',
+            'House sparrow (Male)',
+            'Mourning dove',
+            'Cardinal (Male)',
+            'Cardinal (Female)',  # 20
+            'Northern flicker',
+            'Pileated woodpecker',
+            'Red winged blackbird (Female or Immature)',
+            'Red winged blackbird (Male)',
+            'Squirrel! >:o',  # 25
+            'Tufted titmouse',
+            'White-breasted nuthatch']  # 27
+    else:
+        model = load_model("E:\\KerasOutput\\Stow away\\July_3rd_2020\\saved model.h5")
+
+        df_name2id_map = pd.read_csv("E:\\ML Training Data\\" + 'Class label to ID map.csv', index_col=None, header=0)
+        pretty_names_list = list(df_name2id_map['Label'])
 
 else:
     print("Skipping model ...")
     model = None
 
-pretty_names_list = [
-    'Crow',
-    'Goldfinch (breeding Male)',
-    'Goldfinch (non-breeding Male or Female)',
-    'No bird detected',  # 3
-    'Black-capped chickadee',
-    'Blue jay',
-    'Brown-headed cowbird (Female)',
-    'Brown-headed cowbird (Male)',
-    'Carolina wren',
-    'Common grakle',
-    'Downy woodpecker',  # 10
-    'Eastern bluebird',
-    'Eu starling',
-    'Eu starling off-duty Ad',
-    'House finch (Male)',
-    'House finch (Female)',  # 15
-    'House sparrow (Female or Immature)',
-    'House sparrow (Male)',
-    'Mourning dove',
-    'Cardinal (Male)',
-    'Cardinal (Female)',  # 20
-    'Northern flicker',
-    'Pileated woodpecker',
-    'Red winged blackbird (Female or Immature)',
-    'Red winged blackbird (Male)',
-    'Squirrel! >:o',  # 25
-    'Tufted titmouse',
-    'White-breasted nuthatch']  # 27
 
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []
@@ -114,7 +123,7 @@ default_difference_to_lower = 10
 for c in range(len(pretty_names_list)):
 
     # Troublesome species that need higher criteria
-    if (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c == 27):
+    if 1 == 2 and (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c == 27):
 
         prob_hysteresis_higher.append(default_higher + 7)
         prob_hysteresis_lower.append(default_higher + 7 - default_difference_to_lower)
