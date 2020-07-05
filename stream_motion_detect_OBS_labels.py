@@ -27,17 +27,17 @@ plot_mode_on = False
 DEBUG = False
 
 minimum_prob = 0  # The minimum probability for selection
-main_prob_criteria = 85  # Main criteria for a final classsification (mean of num_classifications)
+main_prob_criteria = 90  # Main criteria for a final classsification (mean of num_classifications)
 num_classifications = 5  # number of images across space and time classified within current cluster
 ID_stay_time = 1  # Cycles before a positive ID has faded away in the species ID panel
 num_cycles_in_history = 3  # Number of cycles in history
 max_dist = 5  # max allowed distance when looking for classification clusters of same species
 
-alpha_detect = 0.75
-alpha_decay = 0.01
+alpha_detect = 0.85
+alpha_decay = 0.015
 
 # Folders
-stream_folder = "E:\\Electric Bird Caster\\"
+stream_folder = "F:\\Electric Bird Caster\\"
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
@@ -114,6 +114,38 @@ else:
     print("Skipping model ...")
     model = None
 
+<<<<<<< .merge_file_a03788
+=======
+pretty_names_list = [
+    'American Crow',
+    'Goldfinch (M)',  # breeding male
+    'Goldfinch (F)',  # non-breeding male or female
+    'No bird detected',  # 3
+    'Black-capped chickadee',
+    'Blue jay',
+    'Brown-headed cowbird (F)',
+    'Brown-headed cowbird (M)',
+    'Carolina wren',
+    'Common grakle',
+    'Downy woodpecker',  # 10
+    'Eastern bluebird',
+    'Eu starling',
+    'Eu starling off-duty Ad',
+    'House finch (M)',
+    'House finch (F)',  # 15
+    'House sparrow (F/Im)',
+    'House sparrow (M)',
+    'Mourning dove',
+    'Cardinal (M)',
+    'Cardinal (F)',  # 20
+    'Northern flicker',
+    'Pileated woodpecker',
+    'Red winged blackbird (F/Im)',
+    'Red winged blackbird (M)',
+    'Squirrel',  # 25
+    'Tufted titmouse',
+    'White-breasted nuthatch']  # 27
+>>>>>>> .merge_file_a02552
 
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []
@@ -125,8 +157,8 @@ for c in range(len(pretty_names_list)):
     # Troublesome species that need higher criteria
     if 1 == 2 and (c == 5 or c == 18 or c == 22 or c == 24 or c == 24 or c == 26 or c == 27):
 
-        prob_hysteresis_higher.append(default_higher + 7)
-        prob_hysteresis_lower.append(default_higher + 7 - default_difference_to_lower)
+        prob_hysteresis_higher.append(default_higher + 5)
+        prob_hysteresis_lower.append(default_higher + 5 - default_difference_to_lower)
 
     # Regular
     else:
