@@ -6,7 +6,7 @@ import numpy as np
 
 class BirdStats:
 
-    def __init__(self, stream_folder="E:\\Electric Bird Caster\\", date=None, DEBUG=False):
+    def __init__(self, stream_folder="F:\\Electric Bird Caster\\", date=None, DEBUG=False):
 
         # copy data directory to class
         self.stream_folder = stream_folder
@@ -67,7 +67,7 @@ class BirdStats:
         self.birds_seen_today = np.sort(self.birds_seen_today)
         birds_seen_today_file = open(self.stream_folder + "birds_seen_today.txt", "w+")
         birds_seen_today_txt = ""  # Reset debug info text
-        birds_seen_today_txt = birds_seen_today_txt + "*** BIRDS SEEN TODAY (" + str(dt.datetime.today().date()) + ") ******" + "\n"
+        birds_seen_today_txt = birds_seen_today_txt + "**** BIRDS SEEN TODAY ****" + "\n"
 
         if len(self.birds_seen_today) < 1:
 
@@ -84,7 +84,7 @@ class BirdStats:
                 num_detections = len(bird_df['loop_cycle'].unique())
 
                 # Add entry to text
-                birds_seen_today_txt = birds_seen_today_txt + bird + " (" + str(num_detections) + ")" + "\n"
+                birds_seen_today_txt = birds_seen_today_txt + " - " + bird + " (" + str(num_detections) + ") " + "\n"
 
         birds_seen_today_file.write(birds_seen_today_txt)
         birds_seen_today_file.close()
@@ -101,4 +101,4 @@ class BirdStats:
         df_tmp = self.df[self.df['hour'] == clock_hour]
 
         # Save data from selected hour to CSV file
-        df_tmp.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
+        df_tmp.to_csv(r'F:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
