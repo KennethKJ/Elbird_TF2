@@ -113,6 +113,41 @@ if doNN:
 else:
     print("Skipping model ...")
     model = None
+# <<<<<<< HEAD
+#
+# <<<<<<< .merge_file_a03788
+# =======
+# pretty_names_list = [
+#     'American Crow',
+#     'Goldfinch (M)',  # breeding male
+#     'Goldfinch (F)',  # non-breeding male or female
+#     'No bird detected',  # 3
+#     'Black-capped chickadee',
+#     'Blue jay',
+#     'Brown-headed cowbird (F)',
+#     'Brown-headed cowbird (M)',
+#     'Carolina wren',
+#     'Common grakle',
+#     'Downy woodpecker',  # 10
+#     'Eastern bluebird',
+#     'Eu starling',
+#     'Eu starling off-duty Ad',
+#     'House finch (M)',
+#     'House finch (F)',  # 15
+#     'House sparrow (F/Im)',
+#     'House sparrow (M)',
+#     'Mourning dove',
+#     'Cardinal (M)',
+#     'Cardinal (F)',  # 20
+#     'Northern flicker',
+#     'Pileated woodpecker',
+#     'Red winged blackbird (F/Im)',
+#     'Red winged blackbird (M)',
+#     'Squirrel',  # 25
+#     'Tufted titmouse',
+#     'White-breasted nuthatch']  # 27
+# # >>>>>>> .merge_file_a02552
+# =======
 #
 # <<<<<<< .merge_file_a03788
 # =======
@@ -146,6 +181,7 @@ else:
 #     'Tufted titmouse',
 #     'White-breasted nuthatch']  # 27
 # >>>>>>> .merge_file_a02552
+# >>>>>>> 90a640450de03dc586ea03e61afd8f54fb1c956b
 
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []
