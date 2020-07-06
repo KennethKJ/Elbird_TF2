@@ -1,3 +1,5 @@
+import os
+
 from tensorflow.keras.models import load_model
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -37,7 +39,12 @@ alpha_detect = 0.85
 alpha_decay = 0.015
 
 # Folders
-stream_folder = "F:\\Electric Bird Caster\\"
+computer_name = os.environ['COMPUTERNAME']
+if computer_name == 'MASTER-DNN':
+    stream_folder = "E:\\Electric Bird Caster\\"
+else:
+    stream_folder = "F:\\Electric Bird Caster\\"
+
 image_capture_folder = stream_folder + "Captured Images\\"
 
 # IP Camera parameters
@@ -105,83 +112,14 @@ if doNN:
             'Tufted titmouse',
             'White-breasted nuthatch']  # 27
     else:
-        model = load_model("E:\\KerasOutput\\Stow away\\July_3rd_2020\\saved model.h5")
+        model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\saved model.h5")
 
-        df_name2id_map = pd.read_csv("E:\\ML Training Data\\" + 'Class label to ID map.csv', index_col=None, header=0)
+        df_name2id_map = pd.read_csv("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
         pretty_names_list = list(df_name2id_map['Label'])
 
 else:
     print("Skipping model ...")
     model = None
-# <<<<<<< HEAD
-#
-# <<<<<<< .merge_file_a03788
-# =======
-# pretty_names_list = [
-#     'American Crow',
-#     'Goldfinch (M)',  # breeding male
-#     'Goldfinch (F)',  # non-breeding male or female
-#     'No bird detected',  # 3
-#     'Black-capped chickadee',
-#     'Blue jay',
-#     'Brown-headed cowbird (F)',
-#     'Brown-headed cowbird (M)',
-#     'Carolina wren',
-#     'Common grakle',
-#     'Downy woodpecker',  # 10
-#     'Eastern bluebird',
-#     'Eu starling',
-#     'Eu starling off-duty Ad',
-#     'House finch (M)',
-#     'House finch (F)',  # 15
-#     'House sparrow (F/Im)',
-#     'House sparrow (M)',
-#     'Mourning dove',
-#     'Cardinal (M)',
-#     'Cardinal (F)',  # 20
-#     'Northern flicker',
-#     'Pileated woodpecker',
-#     'Red winged blackbird (F/Im)',
-#     'Red winged blackbird (M)',
-#     'Squirrel',  # 25
-#     'Tufted titmouse',
-#     'White-breasted nuthatch']  # 27
-# # >>>>>>> .merge_file_a02552
-# =======
-#
-# <<<<<<< .merge_file_a03788
-# =======
-# pretty_names_list = [
-#     'American Crow',
-#     'Goldfinch (M)',  # breeding male
-#     'Goldfinch (F)',  # non-breeding male or female
-#     'No bird detected',  # 3
-#     'Black-capped chickadee',
-#     'Blue jay',
-#     'Brown-headed cowbird (F)',
-#     'Brown-headed cowbird (M)',
-#     'Carolina wren',
-#     'Common grakle',
-#     'Downy woodpecker',  # 10
-#     'Eastern bluebird',
-#     'Eu starling',
-#     'Eu starling off-duty Ad',
-#     'House finch (M)',
-#     'House finch (F)',  # 15
-#     'House sparrow (F/Im)',
-#     'House sparrow (M)',
-#     'Mourning dove',
-#     'Cardinal (M)',
-#     'Cardinal (F)',  # 20
-#     'Northern flicker',
-#     'Pileated woodpecker',
-#     'Red winged blackbird (F/Im)',
-#     'Red winged blackbird (M)',
-#     'Squirrel',  # 25
-#     'Tufted titmouse',
-#     'White-breasted nuthatch']  # 27
-# >>>>>>> .merge_file_a02552
-# >>>>>>> 90a640450de03dc586ea03e61afd8f54fb1c956b
 
 # Species specific thresholds/hysteresis
 prob_hysteresis_higher = []

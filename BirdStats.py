@@ -6,7 +6,7 @@ import numpy as np
 
 class BirdStats:
 
-    def __init__(self, stream_folder="F:\\Electric Bird Caster\\", date=None, DEBUG=False):
+    def __init__(self, stream_folder="E:\\Electric Bird Caster\\", date=None, DEBUG=False):
 
         # copy data directory to class
         self.stream_folder = stream_folder
@@ -101,4 +101,5 @@ class BirdStats:
         df_tmp = self.df[self.df['hour'] == clock_hour]
 
         # Save data from selected hour to CSV file
-        df_tmp.to_csv(r'F:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
+
+        df_tmp.to_csv(r'E:\\Electric Bird Caster\\Data\\' + df_filename, index=False)
