@@ -111,12 +111,16 @@ if doNN:
             'Squirrel! >:o',  # 25
             'Tufted titmouse',
             'White-breasted nuthatch']  # 27
+
+        back_ground_ID = pretty_names_list.index('No bird detected')
+
     else:
         model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\saved model.h5")
 
         df_name2id_map = pd.read_csv("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
         pretty_names_list = list(df_name2id_map['Label'])
 
+        back_ground_ID = pretty_names_list.index('Background')
 else:
     print("Skipping model ...")
     model = None
@@ -731,8 +735,8 @@ try:
                     pred_probs_instance = np.max(pred, axis=1) * 100
 
                     # Remove background classifications
-                    pred_probs_instance = pred_probs_instance[bird_classification_instances != 3]
-                    bird_classification_instances = bird_classification_instances[bird_classification_instances != 3]
+                    pred_probs_instance = pred_probs_instance[bird_classification_instances != back_ground_ID]
+                    bird_classification_instances = bird_classification_instances[bird_classification_instances != back_ground_ID]
 
                     # Remove classifications below minimum
                     bird_classification_instances = bird_classification_instances[pred_probs_instance > minimum_prob]
