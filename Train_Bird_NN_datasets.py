@@ -39,7 +39,7 @@ print("Starting training session :) ")
 # num_train_files = sum([len(files) for r, d, files in os.walk(train_path)])
 # num_eval_files = sum([len(files) for r, d, files in os.walk(eval_path)])
 
-apply_mixed_precicision = True
+apply_mixed_precicision = False
 if apply_mixed_precicision:
     policy = mixed_precision.Policy('mixed_float16')
     mixed_precision.set_policy(policy)
@@ -48,7 +48,7 @@ if apply_mixed_precicision:
 
 # SET PARAMETERS
 keras_root_output_folder = "E:\\KerasOutput\\"
-training_folder_name = 'July_3rd_2020'
+training_folder_name = 'July_11th_2020_2'
 saved_model_filename = "saved model.h5"
 
 # if os.path.isfile(keras_root_output_folder + training_folder_name + "\\" + saved_model_filename):
@@ -57,16 +57,16 @@ saved_model_filename = "saved model.h5"
 train_from_beginning = False
 
 params = {}
-params['num_epochs'] = 80
-params['initial_epoch'] = 73
+params['num_epochs'] = 100
+params['initial_epoch'] = 90
 params['steps_per_epoch'] = 1000
 params['validation_steps'] = 100
 
-params['learning_rate'] = 0.000001
+params['learning_rate'] = 0.0000001
 params['dropout_pc_hidden'] = 0.6
 params['dropout_pc_FC'] = 0.6
 
-params['batch_size'] = 16 *2 *2 *2
+params['batch_size'] = 16*2*2
 
 
 params['buffer_size'] = 10000  # int(params['steps_per_epoch'] * params['batch_size'])
@@ -279,6 +279,8 @@ model.compile(
 #     callbacks=[checkpoint_cb, tensorboard_cb]
 # )
 
+# os.chdir('E:\\Virtual Envs\\TF2.2\\Scripts\\')
+# os.system('tensorboard --logdir ' + '"' + keras_root_output_folder + training_folder_name + '"')
 
 # FIT
 history = model.fit(

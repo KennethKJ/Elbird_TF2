@@ -45,7 +45,18 @@ if computer_name == 'MASTER-DNN':
 else:
     stream_folder = "F:\\Electric Bird Caster\\"
 
-image_capture_folder = stream_folder + "Captured Images\\"
+# Grab data from files from todays date
+date = str(datetime.datetime.today().year) + '_' + \
+       str(datetime.datetime.today().month) + '_' + \
+       str(datetime.datetime.today().day)
+
+image_capture_folder = stream_folder + "Capture\\Images\\" + date + "\\"
+
+if not os.path.exists(image_capture_folder):
+    os.mkdir(image_capture_folder)
+    print("Created image capture folder: " + image_capture_folder)
+
+
 
 # IP Camera parameters
 IP_start = 101
@@ -80,7 +91,7 @@ useNewNN = True
 if doNN:
     print("Loading model ... ")
     if not useNewNN:
-        model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+        model = load_model("E:\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
 
         pretty_names_list = [
             'Crow',
@@ -115,9 +126,9 @@ if doNN:
         back_ground_ID = pretty_names_list.index('No bird detected')
 
     else:
-        model = load_model("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\saved model.h5")
+        model = load_model("E:\\Google Drive\ML\\Electric Bird Caster\Model\\saved model.h5")
 
-        df_name2id_map = pd.read_csv("C:\\Users\\alert\\Google Drive\ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
+        df_name2id_map = pd.read_csv("E:\\Google Drive\ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
         pretty_names_list = list(df_name2id_map['Label'])
 
         back_ground_ID = pretty_names_list.index('Background')
@@ -278,7 +289,7 @@ try:
                 grab_delay = dT.total_seconds()
                 # print("Grab delay = " + str(grab_delay) + " Thr = " + str(1/(frame_rate+1)))
                 num_frames += 1
-                if num_frames > 10*frame_rate:
+                if num_frames > 30 * frame_rate:
                     grab_delay = 1
                     print("Looks like it's caught indefinitely in frame reading loop. Skipping it! " + str(T))
 
@@ -299,17 +310,17 @@ try:
             while frame is None:
 
                 # Let go of capture object
-                print(' * Releasing current camera object')
+                # print(' * Releasing current camera object')
                 cap.release()
 
                 # Inform
-                print(' * Writing label to streaming SW')
-                label_file = open(stream_folder + "label.txt", "w+")
-                label_file.write('< Neural network camera connection lost > \n < Retrying to connect ...')
-                label_file.close()
+                # print(' * Writing label to streaming SW')
+                # label_file = open(stream_folder + "label.txt", "w+")
+                # label_file.write('< Neural network camera connection lost > \n < Retrying to connect ...')
+                # label_file.close()
 
                 # print('Trying again in ' + str(wait_time) + ' secs ...')
-                print(' * Trying to connect again ...')
+                # print(' * Trying to connect again ...')
 
                 ss = "rtsp://admin:JuLian50210809@192.168.0.200:554/Streaming/Channels/101/"
 
@@ -323,7 +334,7 @@ try:
                 ret, frame = cap.read()
 
                 if frame is None:
-                    print(" * Connection unsuccessful, trying again in " + str(wait_time) + " seconds ...")
+                    print(" * Re-connection unsuccessful, trying again in " + str(wait_time) + " seconds ...")
                     time.sleep(wait_time)
 
 
@@ -331,10 +342,11 @@ try:
                 restart_no += 1
 
                 # Inform
-                label_file = open(stream_folder + "label.txt", "w+")
-                label_file.write('< Connection re-established >')
-                label_file.close()
-                print(' * Connection re-established ' + str(datetime.datetime.now()))
+                # label_file = open(stream_folder + "label.txt", "w+")
+                # label_file.write('< Connection re-established >')
+                # label_file.close()
+                print(' * Connection re-established ' + str(datetime.datetime.now()) +
+                      "(restart # " + str(restart_no) + ")")
 
         try:
             # Change color format
