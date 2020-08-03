@@ -38,12 +38,14 @@ max_dist = 5  # max allowed distance when looking for classification clusters of
 alpha_detect = 0.85
 alpha_decay = 0.015
 
+Google_drive_path = 'E:\\Google Drive\\'
+Google_drive_path = "C:\\Users\\alert\\Google Drive\\"
 # Folders
-computer_name = os.environ['COMPUTERNAME']
-if computer_name == 'MASTER-DNN':
-    stream_folder = "E:\\Electric Bird Caster\\"
-else:
-    stream_folder = "F:\\Electric Bird Caster\\"
+# computer_name = os.environ['COMPUTERNAME']
+# if computer_name == 'MASTER-DNN':
+stream_folder = "E:\\Electric Bird Caster\\"
+# else:
+#     stream_folder = "F:\\Electric Bird Caster\\"
 
 # Grab data from files from todays date
 date = str(datetime.datetime.today().year) + '_' + \
@@ -91,7 +93,7 @@ useNewNN = True
 if doNN:
     print("Loading model ... ")
     if not useNewNN:
-        model = load_model("E:\\Google Drive\ML\\Electric Bird Caster\Model\\my_keras_model.h5")
+        model = load_model(Google_drive_path + "Electric Bird Caster\Model\\my_keras_model.h5")
 
         pretty_names_list = [
             'Crow',
@@ -126,9 +128,9 @@ if doNN:
         back_ground_ID = pretty_names_list.index('No bird detected')
 
     else:
-        model = load_model("E:\\Google Drive\ML\\Electric Bird Caster\Model\\saved model.h5")
+        model = load_model(Google_drive_path + "ML\\Electric Bird Caster\\Model\\saved model.h5")
 
-        df_name2id_map = pd.read_csv("E:\\Google Drive\ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
+        df_name2id_map = pd.read_csv(Google_drive_path + "ML\\Electric Bird Caster\Model\\" + 'Class label to ID map.csv', index_col=None, header=0)
         pretty_names_list = list(df_name2id_map['Label'])
 
         back_ground_ID = pretty_names_list.index('Background')
